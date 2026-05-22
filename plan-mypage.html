@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>施策定義書：マイページ機能</title>
+  <style>
+    :root {
+      --green:       #2d6a4f;
+      --green2:      #1b4332;
+      --light-green: #52b788;
+      --pale-green:  #d8f3dc;
+      --pale-bg:     #f4f9f6;
+      --gray:        #6c757d;
+      --light-gray:  #f4f6f4;
+      --red:         #c0392b;
+      --pale-red:    #fdf0ef;
+      --orange:      #e07a25;
+      --pale-orange: #fdf3e7;
+      --blue:        #1d6fa8;
+      --pale-blue:   #eaf4fb;
+      --border:      #dee2e6;
+      --text:        #1a1a1a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--pale-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(135deg, var(--green2), var(--green));
+      color: white;
+      padding: 48px 32px 36px;
+      border-bottom: 4px solid var(--light-green);
+    }
+    .cover-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      opacity: .7;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .cover-title {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .cover-sub {
+      font-size: 13px;
+      opacity: .85;
+      margin-bottom: 24px;
+    }
+    .cover-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .cover-meta-item { font-size: 12px; opacity: .75; }
+    .cover-meta-item strong { opacity: 1; display: block; font-size: 13px; }
+
+    /* ── Layout ── */
+    .container { max-width: 860px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--green2);
+      border-left: 4px solid var(--light-green);
+      padding-left: 10px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--green);
+    }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .callout-ok    { background: var(--pale-green);  border-left: 4px solid var(--light-green); }
+    .callout-warn  { background: var(--pale-orange); border-left: 4px solid var(--orange); }
+    .callout-error { background: var(--pale-red);    border-left: 4px solid var(--red); }
+    .callout-info  { background: var(--pale-blue);   border-left: 4px solid var(--blue); }
+    .callout-title { font-weight: bold; margin-bottom: 4px; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    th {
+      background: var(--green);
+      color: white;
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .badge-required  { background: #fee2e2; color: #991b1b; }
+    .badge-recommend { background: #fef9c3; color: #854d0e; }
+    .badge-future    { background: #e0f2fe; color: #0c4a6e; }
+    .badge-done      { background: var(--pale-green); color: var(--green2); }
+
+    /* ── Phase timeline ── */
+    .phases { display: flex; flex-direction: column; gap: 0; }
+    .phase-item {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .phase-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 40px;
+      flex-shrink: 0;
+    }
+    .phase-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .phase-connector {
+      width: 2px;
+      flex: 1;
+      min-height: 16px;
+      background: var(--border);
+    }
+    .phase-item:last-child .phase-connector { display: none; }
+    .phase-body {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      flex: 1;
+      margin-left: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .phase-name { font-weight: bold; font-size: 14px; }
+    .phase-size {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--light-gray);
+      color: var(--gray);
+    }
+    .phase-desc { font-size: 13px; color: #333; }
+    .phase-tasks {
+      margin-top: 8px;
+      padding-left: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .phase-tasks li {
+      font-size: 12px;
+      color: #555;
+      padding-left: 14px;
+      position: relative;
+    }
+    .phase-tasks li::before {
+      content: '•';
+      position: absolute;
+      left: 4px;
+      color: var(--light-green);
+    }
+    .phase-dep {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--gray);
+    }
+
+    .color-p0 { background: #6b7280; }
+    .color-p1 { background: #1d6fa8; }
+    .color-p2 { background: #2563eb; }
+    .color-p3 { background: var(--orange); }
+    .color-p4 { background: var(--green); }
+    .color-p5 { background: var(--green2); }
+    .color-p6 { background: #7c3aed; }
+
+    /* ── Code block ── */
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 12px;
+      overflow-x: auto;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .code-comment { color: #6c7086; }
+    .code-key     { color: #89b4fa; }
+    .code-val     { color: #a6e3a1; }
+    .code-str     { color: #f9e2af; }
+
+    /* ── Risk matrix ── */
+    .risk-high   { color: var(--red);    font-weight: bold; }
+    .risk-mid    { color: var(--orange); font-weight: bold; }
+    .risk-low    { color: var(--green);  font-weight: bold; }
+
+    /* ── Steps ── */
+    .steps { counter-reset: step-counter; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step-counter;
+      padding: 10px 12px 10px 44px;
+      position: relative;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .steps li:last-child { border-bottom: none; }
+    .steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      width: 22px;
+      height: 22px;
+      background: var(--green);
+      color: white;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Scope lists ── */
+    .scope-list { list-style: none; padding: 0; }
+    .scope-list li { padding: 4px 0 4px 22px; position: relative; font-size: 13px; }
+    .scope-list li::before { position: absolute; left: 0; }
+    .scope-in  li::before { content: '✅'; }
+    .scope-out li::before { content: '❌'; }
+
+    /* ── TOC ── */
+    .toc {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+    }
+    .toc-title { font-weight: bold; color: var(--green2); margin-bottom: 10px; font-size: 13px; }
+    .toc-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .toc-list li a {
+      color: var(--blue);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .toc-list li a:hover { text-decoration: underline; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: white; }
+      .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="cover-label">施策定義書 / Feature Spec</div>
+  <div class="cover-title">⛳ マイページ機能</div>
+  <div class="cover-sub">ユーザー認証・ラウンド履歴・個人スタッツ・パット数入力</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><strong>ステータス</strong>計画中（未実装）</div>
+    <div class="cover-meta-item"><strong>最終更新</strong>2026-05-18</div>
+    <div class="cover-meta-item"><strong>対象アプリ</strong>ゴルフスコア（index.html）</div>
+    <div class="cover-meta-item"><strong>実装規模</strong>大（Phase 0〜6）</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">📑 目次</div>
+    <ul class="toc-list">
+      <li><a href="#purpose">1. 目的・背景</a></li>
+      <li><a href="#scope">2. スコープ</a></li>
+      <li><a href="#spec">3. 確定仕様</a></li>
+      <li><a href="#datamodel">4. データモデル</a></li>
+      <li><a href="#ux">5. 画面・UXフロー</a></li>
+      <li><a href="#phases">6. 実装フェーズ</a></li>
+      <li><a href="#security">7. セキュリティ・プライバシー</a></li>
+      <li><a href="#firebase-setup">8. Firebase Console セットアップ手順</a></li>
+      <li><a href="#risks">9. リスクアセスメント</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 目的・背景 -->
+  <div class="section" id="purpose">
+    <div class="section-title">1. 目的・背景</div>
+    <table>
+      <tr><th style="width:40%">現状の課題</th><th>本施策での解決</th></tr>
+      <tr><td>過去ラウンドはURLを管理しないとアクセスできない</td><td>ログインすれば自動的に履歴が残る</td></tr>
+      <tr><td>個人スタッツ（平均スコア・ベスト等）が見られない</td><td>マイページで通算成績・ホール別傾向を確認できる</td></tr>
+      <tr><td>パット数が記録できない</td><td>ショット数と別にパット数を入力・分析できる</td></tr>
+      <tr><td>メンバーが誰かを特定する仕組みがない</td><td>任意ログインで自己紐づけが可能になる</td></tr>
+    </table>
+  </div>
+
+  <!-- 2. スコープ -->
+  <div class="section" id="scope">
+    <div class="section-title">2. スコープ</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">✅ 今回含めるもの</div>
+        <ul class="scope-list scope-in">
+          <li>プライバシーポリシーの作成・設置</li>
+          <li>Googleログイン対応</li>
+          <li>メール＆パスワード認証対応</li>
+          <li>ラウンドへの自動UID紐づけ（作成者）</li>
+          <li>他人のラウンドへの自己紐づけUI（メンバー画面のみ）</li>
+          <li>マイページ：ラウンド履歴</li>
+          <li>マイページ：個人スタッツ（ホール別含む）</li>
+          <li>パット数入力・パット関連スタッツ</li>
+          <li>アカウント削除機能</li>
+          <li>Firebase Security Rules 再設計</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">❌ 今回含めないもの</div>
+        <ul class="scope-list scope-out">
+          <li>ソーシャル機能（フォロー・ランキング等）</li>
+          <li>メンバー招待・承認フロー</li>
+          <li>複数アカウントのマージ</li>
+          <li>プッシュ通知</li>
+          <li>管理者認証のFirebase Auth移行（将来課題）</li>
+          <li>ホール別GIR（フェアウェイキープ等）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-title">📌 メンバー登録のポリシー（変更なし）</div>
+      メンバー登録は引き続き「誰でも自由」。幹事がメンバー登録しても、招待URLを受けたメンバーが自分で登録することも可能。ログインは義務ではなく、ゲストとして今まで通り使い続けることもできる。
+    </div>
+  </div>
+
+  <!-- 3. 確定仕様 -->
+  <div class="section" id="spec">
+    <div class="section-title">3. 確定仕様</div>
+
+    <div class="card">
+      <div class="card-title">🔑 認証</div>
+      <table>
+        <tr><th style="width:35%">項目</th><th>仕様</th></tr>
+        <tr><td>ログイン方法</td><td>Googleアカウント ／ メール＆パスワード（両対応）</td></tr>
+        <tr><td>ゲスト利用</td><td>引き続き可能（ログイン不要でフル利用可）</td></tr>
+        <tr><td>ログイン状態の維持</td><td>Firebase Auth デフォルト（ブラウザを閉じても維持）</td></tr>
+        <tr><td>メール確認</td><td>登録後に確認メールを送信。未確認でも利用可だがスタッツ保存を制限</td></tr>
+        <tr><td>ログイン場所</td><td>ヘッダーのユーザーアイコン ／ マイページタブ</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👤 自己紐づけ</div>
+      <table>
+        <tr><th style="width:35%">項目</th><th>仕様</th></tr>
+        <tr><td>表示場所</td><td>① メンバー画面のみ（カウント・スコア画面はシンプルを維持）</td></tr>
+        <tr><td>操作</td><td>メンバー一覧から「これが自分」を選択</td></tr>
+        <tr><td>変更・取消</td><td>いつでも変更・取消可能</td></tr>
+        <tr><td>二重防止</td><td>既に他のUIDが選択済みのメンバーは選択不可</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 マイページ（④タブ追加）</div>
+      <table>
+        <tr><th style="width:35%">セクション</th><th>表示内容</th></tr>
+        <tr><td>個人スタッツ</td><td>ラウンド数・平均スコア・ベストスコア・平均PAR差・平均パット数</td></tr>
+        <tr><td>ホール別スタッツ</td><td>ホールごとの平均スコア・平均パット数・バーディー率・ボギー率・ダボ以上率</td></tr>
+        <tr><td>ラウンド履歴</td><td>日付・ラベル・スコア・PAR差・パット数・スコア画面リンク。作成🏌 ／ 参加👤 バッジ付き</td></tr>
+        <tr><td>アカウント</td><td>表示名変更・メール確認再送・ログアウト・アカウント削除</td></tr>
+      </table>
+      <div style="margin-top:8px;font-size:12px;color:var(--gray);">※ 集計対象：全ホール入力済みのラウンドのみ</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⛳ パット数入力（Phase 6）</div>
+      <table>
+        <tr><th style="width:35%">項目</th><th>仕様</th></tr>
+        <tr><td>入力場所</td><td>② カウント画面（ストローク入力の下段に追加）</td></tr>
+        <tr><td>入力範囲</td><td>0〜9（任意。未入力は「−」表示）</td></tr>
+        <tr><td>スコア画面</td><td>パット数列を追加表示（未入力時は非表示 or 「−」）</td></tr>
+        <tr><td>既存データへの影響</td><td>なし（別パスに保存するため）</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. データモデル -->
+  <div class="section" id="datamodel">
+    <div class="section-title">4. データモデル（確定版）</div>
+    <pre><span class="code-comment">// ── 既存（変更なし） ───────────────────────────────────────────</span>
+<span class="code-key">sessions</span>/<span class="code-val">{sessionId}</span>/
+  <span class="code-key">members</span>:  [...]
+  <span class="code-key">scores</span>:   { <span class="code-str">"田中_0"</span>: 4, <span class="code-str">"田中_1"</span>: 5, ... }
+  <span class="code-key">holes</span>:    9 | 18
+  <span class="code-key">pars</span>:     [4, 4, 4, ...]
+
+<span class="code-comment">// ── 既存 + フィールド追加 ────────────────────────────────────────</span>
+<span class="code-key">rounds</span>/<span class="code-val">{sessionId}</span>/
+  <span class="code-comment">// 既存フィールド</span>
+  <span class="code-key">createdAt</span>:   timestamp
+  <span class="code-key">holes</span>:       9 | 18
+  <span class="code-key">label</span>:       string
+  <span class="code-key">date</span>:        <span class="code-str">"YYYY-MM-DD"</span>
+  <span class="code-key">confirmedAt</span>: timestamp | null
+  <span class="code-comment">// 新規追加</span>
+  <span class="code-key">createdBy</span>:   uid | null         <span class="code-comment">// ログイン幹事が作成時にセット</span>
+  <span class="code-key">linkedPlayers</span>:              <span class="code-comment">// 「この◯◯は自分」と紐づけ時にセット</span>
+    <span class="code-val">{uid}</span>: <span class="code-str">"田中"</span>
+
+<span class="code-comment">// ── 新規追加 ─────────────────────────────────────────────────────</span>
+<span class="code-key">sessions</span>/<span class="code-val">{sessionId}</span>/
+  <span class="code-key">putts</span>:                           <span class="code-comment">// パット数（Phase 6）</span>
+    <span class="code-str">"田中_0"</span>: 2
+    <span class="code-str">"田中_1"</span>: 1
+
+<span class="code-key">users</span>/<span class="code-val">{uid}</span>/                        <span class="code-comment">// ユーザープロフィール</span>
+  <span class="code-key">displayName</span>: <span class="code-str">"田中太郎"</span>
+  <span class="code-key">email</span>:       <span class="code-str">"..."</span>
+  <span class="code-key">createdAt</span>:   timestamp
+  <span class="code-key">agreedToPolicy</span>: timestamp      <span class="code-comment">// PP同意日時</span>
+
+<span class="code-key">userRounds</span>/<span class="code-val">{uid}</span>/               <span class="code-comment">// 高速検索用インデックス</span>
+  <span class="code-val">{sessionId}</span>: true              <span class="code-comment">// 作成時 or 自己紐づけ時に書き込み</span></pre>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">⚠️ なぜ userRounds インデックスが必要か</div>
+      Firebase Realtime Database はSQLのWHERE句が使えないため、「createdBy=uid OR linkedPlayers に uid がある rounds」を1クエリで取得できない。userRounds/{uid}/{sessionId}=true を別途管理することで、自分のラウンドID一覧をO(1)で取得可能になる。
+    </div>
+  </div>
+
+  <!-- 5. 画面・UXフロー -->
+  <div class="section" id="ux">
+    <div class="section-title">5. 画面・UXフロー</div>
+
+    <div class="card">
+      <div class="card-title">タブ構成の変更</div>
+      <table>
+        <tr><th>現在</th><th>変更後</th></tr>
+        <tr>
+          <td>① メンバー ② カウント ③ スコア</td>
+          <td>① メンバー ② カウント ③ スコア ④ マイページ<br><span style="font-size:11px;color:var(--gray);">④は常に表示。未ログイン時はログイン促進画面</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ヘッダー変更</div>
+      <pre style="background:#f4f6f4;color:#333;border:1px solid var(--border);font-size:12px;">現在:   ● ⛳ ゴルフスコア                      [?]
+
+変更後: ● ⛳ ゴルフスコア       [👤 田中 ▾]  [?]
+                                   ↑ 未ログイン → 「ログイン」ボタン
+                                     ログイン済み → 名前 + ドロップダウン
+                                                   （マイページ / ログアウト）</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">自己紐づけUI（① メンバー画面）</div>
+      <pre style="background:#f4f6f4;color:#333;border:1px solid var(--border);font-size:12px;">┌──────────────────────────────────────────────┐
+│  ラウンド共有                                 │
+│  ─────────────────────────────────────────   │
+│  👤 田中太郎 でログイン中                     │
+│                                               │
+│  このラウンドの自分のメンバーを選択            │
+│  ┌──────┐  ┌──────┐  ┌──────┐              │
+│  │  田中  │  │  鈴木  │  │  佐藤  │              │
+│  └──────┘  └──────┘  └──────┘              │
+│  選択するとスコアが履歴に蓄積されます          │
+└──────────────────────────────────────────────┘
+
+選択後:
+  あなた: 田中 ✅  [変更する]</pre>
+      <div style="font-size:12px;color:var(--gray);margin-top:6px;">
+        ・メンバーが0人の場合は「メンバーが登録されたら選択できます」を表示<br>
+        ・他のUIDが既に選択済みのメンバーはグレーアウト
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">主要フロー一覧</div>
+      <table>
+        <tr><th style="width:30%">フロー</th><th>説明</th></tr>
+        <tr>
+          <td>幹事がラウンドを作成</td>
+          <td>ログイン済みで「新しいラウンド」→ createdBy=uid 保存 → userRounds に自動追加 → URLをシェア（今まで通り）</td>
+        </tr>
+        <tr>
+          <td>ゲストがURLを開く</td>
+          <td>変更なし。ログイン不要でフル利用可能</td>
+        </tr>
+        <tr>
+          <td>ログインユーザーがURLを開く</td>
+          <td>メンバー画面に自己紐づけUIが表示される。選択すると userRounds に追加</td>
+        </tr>
+        <tr>
+          <td>マイページを開く</td>
+          <td>ログイン済み → 履歴＆スタッツ表示。未ログイン → ログイン促進画面</td>
+        </tr>
+        <tr>
+          <td>アカウント削除</td>
+          <td>確認後 users/{uid} / userRounds/{uid} / linkedPlayers内のuid を削除 → Firebase Auth アカウントも削除</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 6. 実装フェーズ -->
+  <div class="section" id="phases">
+    <div class="section-title">6. 実装フェーズ</div>
+    <div class="phases">
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p0">0</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 0｜プライバシーポリシー</div>
+            <div class="phase-size">小</div>
+            <span class="badge badge-required">必須・最優先</span>
+          </div>
+          <div class="phase-desc">メールアドレス収集前に法的対応を完了する。実装Phase 1より先に着手すること。</div>
+          <ul class="phase-tasks">
+            <li>プライバシーポリシーページの作成（収集情報・利用目的・Firebaseへの保存・越境移転・削除方法を明記）</li>
+            <li>アプリフッターにプライバシーポリシーへのリンクを設置</li>
+            <li>メール登録画面に「利用規約・プライバシーポリシーに同意する」チェックボックスを追加</li>
+            <li>同意日時を users/{uid}/agreedToPolicy に保存</li>
+          </ul>
+          <div class="phase-dep">前提：なし（単独で着手可能）</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p1">1</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 1｜認証基盤</div>
+            <div class="phase-size">中</div>
+            <span class="badge badge-required">必須</span>
+          </div>
+          <div class="phase-desc">Firebase Auth の有効化とアプリへの組み込み。</div>
+          <ul class="phase-tasks">
+            <li>Firebase Auth インポート追加（Google + Email/Password）</li>
+            <li>ヘッダーにログイン状態表示（ユーザー名 or ログインボタン）</li>
+            <li>ログイン・ログアウト・新規登録・パスワードリセットモーダルの実装</li>
+            <li>メール確認メール送信（sendEmailVerification）</li>
+            <li>users/{uid} へのプロフィール保存</li>
+            <li>Firebase Security Rules の再設計（rounds全件読み取り廃止）</li>
+          </ul>
+          <div class="phase-dep">前提：Firebase Console セットアップ完了（Section 8参照）、Phase 0完了</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p2">2</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 2｜ラウンドへの UID 紐づけ</div>
+            <div class="phase-size">小</div>
+          </div>
+          <div class="phase-desc">ログイン中に新規ラウンドを作成した場合に createdBy を自動記録。</div>
+          <ul class="phase-tasks">
+            <li>initSession() / newSession() でログイン中なら createdBy=uid 保存</li>
+            <li>userRounds/{uid}/{sessionId}=true を書き込み</li>
+          </ul>
+          <div class="phase-dep">前提：Phase 1完了</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p3">3</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 3｜自己紐づけ UI（メンバー画面）</div>
+            <div class="phase-size">中</div>
+          </div>
+          <div class="phase-desc">他人が作成したラウンドに自分の参加記録を紐づける。</div>
+          <ul class="phase-tasks">
+            <li>メンバー画面に「このラウンドの自分を選択」カードを追加（ログイン時のみ表示）</li>
+            <li>linkedPlayers/{uid} と userRounds/{uid} への書き込み</li>
+            <li>紐づけ済み表示・変更ボタン・取消ボタン</li>
+            <li>他UIDが選択済みのメンバーをグレーアウト</li>
+          </ul>
+          <div class="phase-dep">前提：Phase 1・2完了</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p4">4</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 4｜マイページ（ラウンド履歴）</div>
+            <div class="phase-size">大</div>
+          </div>
+          <div class="phase-desc">④マイページタブを追加し、自分のラウンド一覧を表示。</div>
+          <ul class="phase-tasks">
+            <li>④マイページタブ追加・画面実装</li>
+            <li>未ログイン時のログイン促進UI</li>
+            <li>userRounds インデックスからラウンド一覧を取得・表示</li>
+            <li>作成🏌 ／ 参加👤 バッジ、日付・ラベル・スコア・PAR差を表示</li>
+            <li>「スコアを開く」でそのラウンドのスコア画面に遷移</li>
+          </ul>
+          <div class="phase-dep">前提：Phase 2・3完了</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p5">5</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 5｜マイページ（個人スタッツ）</div>
+            <div class="phase-size">大</div>
+          </div>
+          <div class="phase-desc">全ラウンドを集計してホール別スタッツまで表示。</div>
+          <ul class="phase-tasks">
+            <li>個人スタッツ集計（ラウンド数・平均スコア・ベスト・平均PAR差）</li>
+            <li>ホール別スタッツ（平均スコア・バーディー率・ボギー率・ダボ以上率）</li>
+            <li>アカウント管理UI（表示名変更・メール確認再送・ログアウト・アカウント削除）</li>
+            <li>アカウント削除時のデータクリーンアップ処理</li>
+          </ul>
+          <div class="phase-dep">前提：Phase 4完了</div>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-line">
+          <div class="phase-dot color-p6">6</div>
+          <div class="phase-connector"></div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-header">
+            <div class="phase-name">Phase 6｜パット数入力・スタッツ</div>
+            <div class="phase-size">中</div>
+          </div>
+          <div class="phase-desc">ショット数に加えてパット数を記録・分析する。</div>
+          <ul class="phase-tasks">
+            <li>カウント画面にパット数入力UI追加（0〜9、任意）</li>
+            <li>sessions/{sessionId}/putts のFirebase保存・リアルタイム同期</li>
+            <li>スコア画面にパット数列追加（未入力は「−」）</li>
+            <li>マイページに平均パット数・ホール別パットスタッツ追加</li>
+            <li>CSVダウンロードにパット数列を追加</li>
+          </ul>
+          <div class="phase-dep">前提：Phase 5完了（パットスタッツ部分のみ。入力UI自体は独立して実装可能）</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 7. セキュリティ・プライバシー -->
+  <div class="section" id="security">
+    <div class="section-title">7. セキュリティ・プライバシー</div>
+
+    <div class="callout callout-ok">
+      <div class="callout-title">✅ Firebase Auth が担保する部分（対応不要）</div>
+      パスワードのハッシュ化保管 / Google OAuth 2.0準拠 / JWT トークン自動管理 / HTTPS通信 / Netlify 自動HTTPS
+    </div>
+
+    <div class="callout callout-error">
+      <div class="callout-title">🚨 要対応：Firebase Security Rules の修正（Phase 1で実施）</div>
+      <p style="margin-bottom:8px;">現状の <code>rounds/.read: true</code> は全件取得を許可しており、認証機能追加後に <code>linkedPlayers: {uid: "田中"}</code> が誰でも閲覧可能になる問題がある。</p>
+      <p>修正後は <code>rounds/$sessionId/.read: true</code>（親レベルは削除）に変更し、管理者画面の取得ロジックを合わせて修正する。</p>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">⚠️ 要注意：管理者パスワードの平文記載（将来課題）</div>
+      現在 <code>const ADMIN_PASSWORD = 'NuuGolf'</code> がHTMLソースに記載されており、個人情報取り扱い後は重要度が上がる。本施策完了後に管理者もFirebase Authで認証する方式への移行を推奨。
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 個人情報保護法（APPI）対応チェックリスト</div>
+      <table>
+        <tr><th style="width:40%">対応項目</th><th style="width:15%">必要度</th><th>内容</th></tr>
+        <tr>
+          <td>プライバシーポリシーの設置</td>
+          <td><span class="badge badge-required">必須</span></td>
+          <td>収集情報・利用目的・Firebase（米国）への保存・越境移転・削除方法を明記</td>
+        </tr>
+        <tr>
+          <td>利用目的の明示</td>
+          <td><span class="badge badge-required">必須</span></td>
+          <td>登録画面に「ゴルフスコア管理目的」と明記</td>
+        </tr>
+        <tr>
+          <td>越境移転への同意取得</td>
+          <td><span class="badge badge-required">必須</span></td>
+          <td>Firebase（Google Cloud＝米国）に保存されることをPPに明記し、同意チェックを設置</td>
+        </tr>
+        <tr>
+          <td>開示・訂正・削除への対応</td>
+          <td><span class="badge badge-required">必須</span></td>
+          <td>マイページからアカウント削除機能を提供。削除時に関連データをすべて消去</td>
+        </tr>
+        <tr>
+          <td>メール確認（本人確認）</td>
+          <td><span class="badge badge-recommend">推奨</span></td>
+          <td>登録後に確認メール送信。なりすまし防止</td>
+        </tr>
+        <tr>
+          <td>表示名はニックネーム可と明示</td>
+          <td><span class="badge badge-recommend">推奨</span></td>
+          <td>登録UIに「本名でなくてもOK（例：ゴルフネーム）」と記載</td>
+        </tr>
+        <tr>
+          <td>管理者認証の強化</td>
+          <td><span class="badge badge-future">将来</span></td>
+          <td>NuuGolfパスワード廃止 → Firebase Auth管理者フラグへ移行</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 8. Firebase Console セットアップ -->
+  <div class="section" id="firebase-setup">
+    <div class="section-title">8. Firebase Console セットアップ手順</div>
+    <div class="callout callout-info">
+      Phase 1 実装前に完了してください。Firebase Console は <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue);">console.firebase.google.com</a> から操作します。
+    </div>
+
+    <div class="card">
+      <div class="card-title">STEP 1｜Authentication を有効化</div>
+      <ol class="steps">
+        <li>Firebase Console を開き、プロジェクトを選択する</li>
+        <li>左メニュー「構築」→「Authentication」をクリック</li>
+        <li>「始める」ボタンをクリック</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">STEP 2｜Google ログインを有効化</div>
+      <ol class="steps">
+        <li>「Sign-in method」タブをクリック</li>
+        <li>「Google」をクリック</li>
+        <li>右上のトグルを「有効」にする</li>
+        <li>「プロジェクトのサポートメール」を自分のメールに設定</li>
+        <li>「保存」をクリック</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">STEP 3｜メール／パスワードを有効化</div>
+      <ol class="steps">
+        <li>「メール/パスワード」をクリック</li>
+        <li>上段「メール/パスワード」トグルを「有効」にする<br><span style="font-size:11px;color:var(--gray);">下段の「メールリンク（パスワードなしのログイン）」はOFFのまま</span></li>
+        <li>「保存」をクリック</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">STEP 4｜承認済みドメインを追加</div>
+      <ol class="steps">
+        <li>「Sign-in method」タブ下部「承認済みドメイン」を確認</li>
+        <li>「ドメインを追加」をクリック</li>
+        <li>Netlify のドメインを入力して追加<br><span style="font-size:12px;color:var(--gray);">例：<code>our-golf-score-check.netlify.app</code>　※ localhost は登録済みのため不要</span></li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">STEP 5｜Realtime Database セキュリティルール更新</div>
+      <ol class="steps">
+        <li>左メニュー「Realtime Database」→「ルール」タブをクリック</li>
+        <li>既存ルールを以下に置き換える</li>
+      </ol>
+      <pre>{
+  <span class="code-str">"rules"</span>: {
+    <span class="code-str">"sessions"</span>: {
+      <span class="code-str">"$sessionId"</span>: {
+        <span class="code-str">".read"</span>: true,
+        <span class="code-str">".write"</span>: true
+      }
+    },
+    <span class="code-str">"rounds"</span>: {
+      <span class="code-str">"$sessionId"</span>: {
+        <span class="code-str">".read"</span>: true,   <span class="code-comment">// ← 親レベルの .read:true を削除（全件列挙防止）</span>
+        <span class="code-str">".write"</span>: true
+      }
+    },
+    <span class="code-str">"courses"</span>: {
+      <span class="code-str">".read"</span>: true,
+      <span class="code-str">".write"</span>: true
+    },
+    <span class="code-str">"users"</span>: {
+      <span class="code-str">"$uid"</span>: {
+        <span class="code-str">".read"</span>:  <span class="code-str">"auth !== null &amp;&amp; auth.uid === $uid"</span>,
+        <span class="code-str">".write"</span>: <span class="code-str">"auth !== null &amp;&amp; auth.uid === $uid"</span>
+      }
+    },
+    <span class="code-str">"userRounds"</span>: {
+      <span class="code-str">"$uid"</span>: {
+        <span class="code-str">".read"</span>:  <span class="code-str">"auth !== null &amp;&amp; auth.uid === $uid"</span>,
+        <span class="code-str">".write"</span>: <span class="code-str">"auth !== null &amp;&amp; auth.uid === $uid"</span>
+      }
+    }
+  }
+}</pre>
+      <ol class="steps" start="3">
+        <li>「公開」をクリック</li>
+      </ol>
+      <div class="callout callout-warn" style="margin-top:12px;margin-bottom:0;">
+        <div class="callout-title">⚠️ このルール変更で管理者画面の全ラウンド取得が制限される</div>
+        現状の管理者画面は rounds/ 全件取得に依存しているため、Phase 1 の実装時に管理者の取得ロジックを合わせて修正すること。
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. リスクアセスメント -->
+  <div class="section" id="risks">
+    <div class="section-title">9. リスクアセスメント</div>
+    <table>
+      <tr><th style="width:30%">リスク</th><th style="width:15%">レベル</th><th style="width:30%">対策</th><th>対応フェーズ</th></tr>
+      <tr>
+        <td>メールアドレスの法的管理不備</td>
+        <td><span class="risk-high">高</span></td>
+        <td>PPの作成・同意チェック・削除機能の実装</td>
+        <td>Phase 0・1</td>
+      </tr>
+      <tr>
+        <td>rounds の linkedPlayers（UID＋名前）が全員に見える</td>
+        <td><span class="risk-mid">中</span></td>
+        <td>Security Rules で全件取得を廃止</td>
+        <td>Phase 1</td>
+      </tr>
+      <tr>
+        <td>管理者パスワードがソースコードに平文記載</td>
+        <td><span class="risk-mid">中</span></td>
+        <td>将来的にFirebase Auth管理者フラグに移行</td>
+        <td>将来</td>
+      </tr>
+      <tr>
+        <td>紐づけの整合性崩れ（削除・変更時）</td>
+        <td><span class="risk-mid">中</span></td>
+        <td>linkedPlayers と userRounds を常にセットで更新</td>
+        <td>Phase 3</td>
+      </tr>
+      <tr>
+        <td>同一メンバーへの二重UID紐づけ</td>
+        <td><span class="risk-low">低</span></td>
+        <td>書き込み前に linkedPlayers をチェック</td>
+        <td>Phase 3</td>
+      </tr>
+      <tr>
+        <td>Netlifyドメイン未登録によるOAuthエラー</td>
+        <td><span class="risk-low">低</span></td>
+        <td>STEP 4 でドメイン登録を事前に実施</td>
+        <td>Firebase設定</td>
+      </tr>
+      <tr>
+        <td>パット数追加による既存データ破壊</td>
+        <td><span class="risk-low">低</span></td>
+        <td>putts を sessions の別パスに保存（scores に手を加えない）</td>
+        <td>Phase 6</td>
+      </tr>
+      <tr>
+        <td>単一HTMLファイルのコード肥大化</td>
+        <td><span class="risk-low">低</span></td>
+        <td>Phase 0〜6完了後の追加コード量は +400〜500行程度の見込み</td>
+        <td>全体</td>
+      </tr>
+    </table>
+
+    <div class="callout callout-info" style="margin-top:16px;">
+      <div class="callout-title">📌 総合評価</div>
+      このアプリは友人グループ内のゴルフスコア管理が目的であり、金融・健康・位置情報などのセンシティブデータは扱わない。適切にPhase 0（PP対応）とPhase 1（Rules修正）を実施すれば、残存リスクは低く抑えられる。
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--gray);font-size:12px;padding-top:20px;border-top:1px solid var(--border);">
+    施策定義書｜マイページ機能｜最終更新：2026-05-18
+  </div>
+
+</div>
+</body>
+</html>

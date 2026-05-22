@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ゴルフスコア</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2d6a4f; --green2: #1b4332;
+      --light-green: #52b788; --pale-green: #d8f3dc;
+      --gray: #6c757d; --light-gray: #f4f6f4;
+      --red: #c0392b; --blue: #1d3557;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: #eaf2ec; min-height: 100vh; max-width: 480px; margin: 0 auto;
+    }
+    header {
+      background: var(--green); color: white; text-align: center;
+      padding: 14px 12px 12px; font-size: 17px; font-weight: bold; letter-spacing: 1px;
+    }
+    .conn-dot {
+      display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+      background: #aaa; margin-right: 6px; vertical-align: middle; transition: background .3s;
+    }
+    .conn-dot.online  { background: #4ade80; }
+    .conn-dot.offline { background: #f87171; }
+    .tabs {
+      display: flex; background: white;
+      border-bottom: 2px solid var(--green); position: sticky; top: 0; z-index: 200;
+    }
+    .tab {
+      flex: 1; padding: 11px 4px 10px; text-align: center; font-size: 12px;
+      cursor: pointer; color: var(--gray); border: none; background: none; margin-bottom: -2px;
+    }
+    .tab.active { color: var(--green); border-bottom: 3px solid var(--green); font-weight: bold; }
+    .screen { display: none; padding: 12px 12px 40px; }
+    .screen.active { display: block; }
+    .card {
+      background: white; border-radius: 14px; padding: 14px;
+      margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    }
+    .card-title { color: var(--green); font-size: 14px; font-weight: bold; margin-bottom: 12px; }
+    .btn {
+      padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 14px; font-weight: bold; transition: opacity .15s, transform .1s;
+    }
+    .btn:active { opacity: .8; transform: scale(.97); }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-danger  { background: var(--red);   color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+    .btn-outline-warn { background: white; color: #d97706; border: 2px solid #d97706; font-size: 12px; }
+    input[type="text"], input[type="number"], input[type="date"] {
+      border: 2px solid #d4e6d4; border-radius: 8px; padding: 10px;
+      font-size: 16px; width: 100%; background: #fafcfa;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus { outline: none; border-color: var(--light-green); }
+    .hole-selector { display: flex; gap: 10px; }
+    .hole-btn {
+      flex: 1; padding: 12px; border: 2px solid var(--green); border-radius: 10px;
+      background: white; color: var(--green); font-size: 15px; font-weight: bold;
+      cursor: pointer; transition: all .2s;
+    }
+    .hole-btn.active { background: var(--green); color: white; }
+    .par-section { margin-top: 6px; }
+    .par-section-label { font-size: 11px; color: var(--gray); font-weight: bold; margin-bottom: 4px; }
+    .par-row { display: flex; gap: 4px; margin-bottom: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .par-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+    .par-cell-label { font-size: 10px; color: var(--gray); }
+    .par-cell input { width: 36px; padding: 5px 2px; text-align: center; font-size: 13px; border: 1px solid #ccc; border-radius: 5px; }
+    .session-url {
+      font-size: 11px; color: var(--gray); word-break: break-all;
+      background: var(--light-gray); border-radius: 6px; padding: 8px 10px;
+      margin-bottom: 10px; line-height: 1.5;
+    }
+    .member-list { list-style: none; margin-top: 10px; }
+    .member-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 4px; border-bottom: 1px solid #eef2ee;
+    }
+    .member-item:last-child { border-bottom: none; }
+    .member-name { font-size: 16px; }
+    .add-form { display: flex; gap: 8px; }
+    .add-form input { flex: 1; }
+    .scroll-tabs { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .scroll-tab {
+      flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+      border: 2px solid #ccc; background: white; font-size: 14px;
+      cursor: pointer; color: var(--gray); white-space: nowrap; transition: all .15s;
+    }
+    .scroll-tab.active { background: var(--green); border-color: var(--green); color: white; }
+    .hole-tabs { display: flex; overflow-x: auto; gap: 5px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .hole-tab {
+      flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+      border: 2px solid #ccc; background: white; font-size: 12px; font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--gray); position: relative; transition: all .15s;
+    }
+    .hole-tab.active { background: var(--green); border-color: var(--green); color: white; }
+    .hole-tab.entered::after {
+      content: ''; position: absolute; bottom: 0; right: 0;
+      width: 8px; height: 8px; background: var(--light-green); border-radius: 50%; border: 1px solid white;
+    }
+    .hole-tab.active.entered::after { background: white; }
+    .counter-info { text-align: center; margin-bottom: 4px; font-size: 14px; color: var(--gray); }
+    .counter-body { display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; padding: 10px 0; }
+    .cnt-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: none;
+      font-size: 36px; font-weight: bold; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: transform .1s, opacity .1s;
+      touch-action: manipulation;
+    }
+    .cnt-btn:active { transform: scale(.9); opacity: .8; }
+    .cnt-btn.minus { background: #fde8e8; color: var(--red); }
+    .cnt-btn.plus  { background: var(--pale-green); color: var(--green); }
+    .hole-tab   { touch-action: manipulation; }
+    .scroll-tab { touch-action: manipulation; }
+    .hole-btn   { touch-action: manipulation; }
+    .cnt-mid { text-align: center; }
+    .cnt-strokes {
+      font-size: 72px; font-weight: bold; color: var(--blue); line-height: 1;
+      cursor: pointer; border-bottom: 2px solid transparent; transition: border-color .15s;
+    }
+    .cnt-strokes:hover { border-bottom-color: var(--light-green); }
+    .cnt-strokes-input {
+      display: none; width: 120px; font-size: 64px; font-weight: bold;
+      color: var(--blue); text-align: center; line-height: 1;
+      border: none; border-bottom: 3px solid var(--light-green);
+      background: transparent; outline: none; -moz-appearance: textfield;
+    }
+    .cnt-strokes-input::-webkit-inner-spin-button,
+    .cnt-strokes-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .cnt-edit-hint { font-size: 10px; color: #bbb; margin-top: 3px; }
+    .cnt-par  { font-size: 13px; color: var(--gray); margin-top: 2px; }
+    .cnt-diff { font-size: 16px; font-weight: bold; min-height: 24px; margin-top: 4px; white-space: nowrap; }
+    .btn-confirm {
+      width: 100%; padding: 14px; margin-top: 16px;
+      font-size: 16px; font-weight: bold; border-radius: 10px;
+      background: var(--green); color: white; border: none;
+      cursor: pointer; touch-action: manipulation; transition: opacity .15s, transform .1s;
+    }
+    .btn-confirm:active { opacity: .8; transform: scale(.98); }
+    .c-eagle  { color: #7c3aed; } .c-birdie { color: #dc2626; } .c-par { color: var(--green); }
+    .c-bogey  { color: #d97706; } .c-double { color: #ea580c; } .c-triple { color: #9d0208; }
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .score-table { border-collapse: collapse; min-width: 100%; font-size: 12px; }
+    .score-table th, .score-table td {
+      border: 1px solid #d4e6d4; padding: 7px 5px; text-align: center; white-space: nowrap;
+    }
+    .score-table th { background: var(--green); color: white; font-size: 12px; }
+    .score-table th.h2 { background: var(--green2); }
+    .score-table th:first-child, .score-table td:first-child { position: sticky; left: 0; z-index: 5; }
+    .score-table th:first-child { z-index: 10; }
+    .score-table td:first-child { background: white; font-weight: bold; }
+    .score-table tr:nth-child(even) td { background: var(--light-gray); }
+    .score-table tr:nth-child(even) td:first-child { background: var(--light-gray); }
+    .score-table .row-total td { background: #c7f0d4 !important; font-weight: bold; }
+    .score-table .row-sub td { background: #eaf7ee !important; font-size: 11px; }
+    .score-table .row-sub td:first-child { background: #eaf7ee !important; }
+    .s-eagle  { color: #7c3aed; font-weight: bold; } .s-birdie { color: #dc2626; font-weight: bold; }
+    .s-par    { color: var(--green); }               .s-bogey  { color: #d97706; }
+    .s-double { color: #ea580c; }                    .s-triple { color: #9d0208; font-weight: bold; }
+    .empty-msg { text-align: center; color: var(--gray); padding: 32px 16px; font-size: 14px; }
+    .reset-area { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    /* ── Help modal ── */
+    .help-btn {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.7); background: transparent;
+      color: white; font-size: 14px; font-weight: bold; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 1000;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 16px;
+      width: 100%; max-width: 440px; max-height: 85vh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .modal-header {
+      position: sticky; top: 0; background: var(--green); color: white;
+      padding: 14px 16px; border-radius: 16px 16px 0 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 15px; font-weight: bold;
+    }
+    .modal-close {
+      background: none; border: none; color: white;
+      font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;
+      touch-action: manipulation;
+    }
+    .modal-body { padding: 16px; }
+    .help-section { margin-bottom: 20px; }
+    .help-section-title {
+      font-size: 13px; font-weight: bold; color: var(--green);
+      border-left: 3px solid var(--green); padding-left: 8px; margin-bottom: 8px;
+    }
+    .help-row {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 13px; line-height: 1.6; padding: 3px 0;
+    }
+    .help-row .lbl {
+      flex-shrink: 0; background: var(--pale-green); color: var(--green);
+      border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: bold; margin-top: 2px;
+    }
+    .help-score-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+    .help-score-table th { background: var(--green); color: white; padding: 5px 8px; }
+    .help-score-table td { border: 1px solid #d4e6d4; padding: 5px 8px; }
+    .help-score-table tr:nth-child(even) td { background: var(--light-gray); }
+    .course-list { list-style: none; margin-top: 8px; }
+    .course-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 4px; border-bottom: 1px solid #eef2ee;
+    }
+    .course-item:last-child { border-bottom: none; }
+    .course-item-name { font-size: 14px; font-weight: bold; }
+    .course-item-meta { font-size: 11px; color: var(--gray); margin-top: 2px; }
+    .course-save-area { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eef2ee; }
+    .del-req-badge {
+      display: inline-block; font-size: 10px; font-weight: bold;
+      background: #fee2e2; color: #991b1b; border-radius: 8px;
+      padding: 2px 7px; margin-left: 6px; vertical-align: middle;
+    }
+    .course-par-detail {
+      margin-top: 8px; padding: 8px 10px; background: var(--light-gray);
+      border-radius: 8px; font-size: 11px; color: var(--gray); line-height: 2;
+    }
+    .par-chip {
+      display: inline-block; width: 26px; text-align: center; font-size: 11px;
+      background: white; border: 1px solid #d4e6d4; border-radius: 4px; margin: 1px;
+    }
+    /* ── Admin screen ── */
+    .admin-header-bar {
+      background: var(--green2); color: white;
+      border-radius: 10px; padding: 12px 16px; margin: 0 12px 12px;
+      font-size: 13px; line-height: 1.6;
+    }
+    .admin-url-box {
+      font-size: 11px; word-break: break-all;
+      background: rgba(255,255,255,.15); border-radius: 6px;
+      padding: 6px 10px; margin: 8px 0 10px;
+    }
+    .admin-subnav {
+      display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .admin-tab-btn {
+      flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: none;
+      background: #dce8dc; color: var(--green2); font-size: 12px; font-weight: bold;
+      cursor: pointer; touch-action: manipulation; transition: all .15s; white-space: nowrap;
+    }
+    .admin-tab-btn.active { background: var(--green); color: white; }
+    .admin-tab-content { padding: 0 12px; }
+    .bulk-bar {
+      background: #fff9eb; border: 1px solid #d97706; border-radius: 10px;
+      padding: 10px 14px; display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 10px;
+    }
+    .round-item {
+      border: 1px solid #d4e6d4; border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 10px; background: #fafcfa;
+      transition: border-color .15s, background .15s;
+    }
+    .round-item-date { font-size: 14px; font-weight: bold; color: var(--blue); }
+    .round-item-meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .round-item-link {
+      font-size: 11px; color: var(--light-green); word-break: break-all; margin-top: 4px;
+    }
+    .round-item-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .round-item-members { font-size: 12px; color: var(--green2); margin-top: 3px; }
+    .round-status {
+      display: inline-block; font-size: 11px; font-weight: bold;
+      border-radius: 10px; padding: 2px 8px;
+    }
+    .status-empty     { background: #f0f0f0; color: #888; }
+    .status-ready     { background: #fef9c3; color: #854d0e; }
+    .status-ongoing   { background: #dcfce7; color: #166534; }
+    .status-done      { background: #dbeafe; color: #1e40af; }
+    .status-confirmed { background: #ede9fe; color: #5b21b6; }
+    .btn-confirm-round {
+      width: 100%; padding: 14px; border-radius: 10px; border: none;
+      background: var(--blue); color: white; font-size: 15px; font-weight: bold;
+      cursor: pointer; touch-action: manipulation; transition: opacity .15s, transform .1s;
+    }
+    .btn-confirm-round:active { opacity: .8; transform: scale(.98); }
+    .confirm-done {
+      background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 10px;
+      padding: 14px; text-align: center; font-size: 14px; font-weight: bold; color: #5b21b6;
+    }
+    .confirm-done span { font-size: 12px; color: #7c3aed; margin-left: 8px; }
+    .round-label-input {
+      width: 100%; border: 1px solid #d4e6d4; border-radius: 6px;
+      padding: 5px 8px; font-size: 12px; margin-top: 7px; background: white;
+    }
+    .round-checkbox {
+      width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;
+      accent-color: var(--green); margin-top: 3px;
+    }
+    .stats-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .stats-table th { background: var(--green); color: white; padding: 8px 10px; text-align: center; }
+    .stats-table td { border: 1px solid #d4e6d4; padding: 7px 10px; text-align: center; }
+    .stats-table td:first-child { text-align: left; font-weight: bold; }
+    .stats-table tr:nth-child(even) td { background: var(--light-gray); }
+    .usage-bar-wrap { background: #e8f5e9; border-radius: 8px; height: 18px; overflow: hidden; margin: 4px 0; }
+    .usage-bar { height: 100%; background: var(--green); border-radius: 8px; transition: width .5s; min-width: 2px; }
+    .usage-bar.warn   { background: #d97706; }
+    .usage-bar.danger { background: var(--red); }
+    .admin-empty { text-align: center; color: var(--gray); padding: 32px 16px; font-size: 14px; }
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold;
+      color: white; white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .3s; z-index: 9999;
+    }
+    .toast.show { opacity: 1; }
+    .toast.info  { background: var(--green2); }
+    .toast.warn  { background: #d97706; }
+    .toast.error { background: var(--red); }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<header style="position:relative;">
+  <span id="conn-dot" class="conn-dot"></span>⛳ ゴルフスコア
+  <button type="button" class="help-btn" onclick="openHelp()">?</button>
+</header>
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="help-modal" onclick="closeHelpOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      操作ガイド
+      <button type="button" class="modal-close" onclick="closeHelp()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="help-section">
+        <div class="help-section-title">① メンバー画面</div>
+        <div class="help-row"><span class="lbl">日付/ラベル</span>ラウンドの日付とラベル（例：春季コンペ）を事前に設定できます。設定内容は同URLを開いた全員にリアルタイムで同期されます。</div>
+        <div class="help-row"><span class="lbl">共有</span>「URLをコピー」で仲間にシェア。ラベル・日付が設定済みの場合は「【春季コンペ】2026-05-16」がURLの上に付加されてコピーされます。そのままLINEなどに貼り付けるだけで内容が伝わります。</div>
+        <div class="help-row"><span class="lbl">コース</span>検索欄にコース名を入力して絞り込み。「適用」でホール数とPARが自動セットされます。現在の設定を保存しておくと次回から呼び出せます。</div>
+        <div class="help-row"><span class="lbl">OUT/IN</span>9ホール設定のとき、18Hコースには「OUT」「IN」ボタンが表示されます。前半・後半それぞれのPARを9H設定で適用できます。</div>
+        <div class="help-row"><span class="lbl">削除依頼</span>誤って登録したコースは「削除依頼」ボタンで管理者に依頼できます。実際の削除は管理者が行います。</div>
+        <div class="help-row"><span class="lbl">PAR</span>ホールごとにPAR 3〜5を設定します。18Hの場合はOUT・INに分けて表示されます。</div>
+        <div class="help-row"><span class="lbl">名前</span>メンバーを登録・削除できます。同じ名前は登録できません。</div>
+        <div class="help-row"><span class="lbl">新ラウンド</span>「新しいラウンド」で新セッションを開始。ホール数・PARは18H/PAR4にリセット、メンバーもリセットされます。</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">② カウント画面</div>
+        <div class="help-row"><span class="lbl">選択</span>上のタブでメンバー、丸ボタンでホールを選択します。</div>
+        <div class="help-row"><span class="lbl">入力</span>「＋」「−」で打数を増減。初期値はそのホールのPARです。最小1打まで減らせます。タップした時点で即座に保存されます。</div>
+        <div class="help-row"><span class="lbl">決定</span>「決定 ›」をタップすると次のホールへ進みます。未入力の場合はPARとして記録されます。</div>
+        <div class="help-row"><span class="lbl">修正</span>数字部分をタップするとキーボードで直接入力できます（1〜20）。</div>
+        <div class="help-row"><span class="lbl">確認</span>入力済みのホールは丸ボタンに緑の点が付きます。</div>
+        <div class="help-row"><span class="lbl">電波</span>ヘッダーの● 🟢オンライン / 🔴オフライン。オフライン時も入力でき、再接続時に自動同期されます。</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">② スコア名の目安</div>
+        <table class="help-score-table">
+          <tr><th>表示</th><th>PARとの差</th></tr>
+          <tr><td>Hole-in-one</td><td>1打でホールイン</td></tr>
+          <tr><td>Condor</td><td>−4</td></tr>
+          <tr><td>Albatross</td><td>−3</td></tr>
+          <tr><td>Eagle</td><td>−2</td></tr>
+          <tr><td>Birdie</td><td>−1</td></tr>
+          <tr><td>Par</td><td>±0</td></tr>
+          <tr><td>Bogey</td><td>+1</td></tr>
+          <tr><td>Double Bogey</td><td>+2以上</td></tr>
+        </table>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">③ スコア画面</div>
+        <div class="help-row"><span class="lbl">表示</span>ホール×メンバーの打数とPAR差（+/−）を一覧表示します。18Hの場合はOUT・IN小計も表示されます。</div>
+        <div class="help-row"><span class="lbl">確定</span>「🏁 ラウンドを確定する」でラウンドの完了を宣言。管理者画面にも「確定済み」として反映されます。確定後もスコアの修正は可能です。</div>
+        <div class="help-row"><span class="lbl">CSV</span>「CSVダウンロード」でExcel対応のファイルを保存できます。</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">データ管理</div>
+        <div class="help-row"><span class="lbl">クリア</span>「スコアのみクリア」でメンバー・PAR設定を残してスコアだけ削除。</div>
+        <div class="help-row"><span class="lbl">リセット</span>「全データをリセット」で全削除。</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<nav class="tabs" id="main-tabs">
+  <button type="button" class="tab active" onclick="nav('members',this)">① メンバー</button>
+  <button type="button" class="tab"        onclick="nav('counter',this)">② カウント</button>
+  <button type="button" class="tab"        onclick="nav('score',  this)">③ スコア</button>
+</nav>
+<!-- 管理者タブ（?admin のときのみ表示） -->
+<nav class="tabs" id="admin-tabs" style="display:none;">
+  <button type="button" class="tab active" onclick="navAdmin(this)">⚙ 管理者画面</button>
+</nav>
+
+<!-- ① MEMBERS -->
+<div id="screen-members" class="screen active">
+  <div class="card">
+    <div class="card-title">ラウンド共有</div>
+    <div class="session-url" id="session-url-display">準備中...</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="copySessionUrl()">URLをコピー</button>
+      <button type="button" class="btn btn-sm btn-outline-warn" onclick="newSession()">新しいラウンド</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label for="round-date-input" style="font-size:12px;color:var(--gray);flex-shrink:0;width:44px;">日付</label>
+        <input type="date" id="round-date-input" style="flex:1;font-size:14px;padding:8px 10px;"
+          oninput="saveRoundMeta()">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label for="round-label-input-user" style="font-size:12px;color:var(--gray);flex-shrink:0;width:44px;">ラベル</label>
+        <input type="text" id="round-label-input-user" placeholder="例：春季コンペ 第2回" maxlength="30"
+          style="flex:1;font-size:14px;padding:8px 10px;" oninput="saveRoundMeta()">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">コース選択</div>
+    <input type="text" id="course-search" placeholder="コース名で検索..."
+      oninput="filterCourses(this.value)" autocomplete="off">
+    <ul class="course-list" id="course-list"></ul>
+    <div class="course-save-area">
+      <div style="font-size:13px;font-weight:bold;color:var(--green);margin-bottom:8px;">現在の設定を保存</div>
+      <div class="add-form">
+        <input type="text" id="course-name-input" placeholder="コース名を入力（30文字以内）" maxlength="30"
+          onkeydown="if(event.key==='Enter')saveCourse()">
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveCourse()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ホール数</div>
+    <div class="hole-selector">
+      <button type="button" class="hole-btn" id="btn9"  onclick="setHoles(9)"> 9ホール</button>
+      <button type="button" class="hole-btn" id="btn18" onclick="setHoles(18)">18ホール</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">各ホール PAR 設定</div>
+    <div id="par-inputs"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">メンバー登録</div>
+    <div class="add-form">
+      <input type="text" id="name-input" placeholder="名前（10文字以内）" maxlength="10"
+        onkeydown="if(event.key==='Enter')addMember()">
+      <button type="button" class="btn btn-primary" onclick="addMember()">追加</button>
+    </div>
+    <ul class="member-list" id="member-list"></ul>
+  </div>
+  <div class="reset-area">
+    <button type="button" class="btn btn-sm btn-outline-warn" onclick="clearScores()">スコアのみクリア</button>
+    <button type="button" class="btn btn-danger btn-sm"       onclick="resetAll()">全データをリセット</button>
+  </div>
+</div>
+
+<!-- ② COUNTER -->
+<div id="screen-counter" class="screen">
+  <div class="card">
+    <div class="card-title">メンバー選択</div>
+    <div class="scroll-tabs" id="ctr-member-tabs"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ホール選択</div>
+    <div class="hole-tabs" id="ctr-hole-tabs"></div>
+  </div>
+  <div class="card" id="ctr-body">
+    <div class="counter-info" id="ctr-info"></div>
+    <div class="counter-body">
+      <button type="button" class="cnt-btn minus" onclick="stroke(-1)">−</button>
+      <div class="cnt-mid">
+        <div class="cnt-strokes" id="ctr-num" onclick="enterEditMode()">0</div>
+        <input type="number" id="ctr-num-input" class="cnt-strokes-input" min="0" max="20"
+          onblur="exitEditMode(this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()">
+        <div class="cnt-edit-hint">tap to edit</div>
+        <div class="cnt-par"  id="ctr-par">PAR —</div>
+        <div class="cnt-diff" id="ctr-diff"></div>
+      </div>
+      <button type="button" class="cnt-btn plus" onclick="stroke(1)">＋</button>
+    </div>
+    <button type="button" class="btn-confirm" id="btn-confirm" onclick="confirmAndNext()">決定　›</button>
+  </div>
+</div>
+
+<!-- ④ ADMIN -->
+<div id="screen-admin" class="screen" style="display:none;padding:12px 0 40px;">
+  <!-- ヘッダー -->
+  <div class="admin-header-bar">
+    <div style="font-weight:bold;font-size:14px;margin-bottom:2px;">⚙ 管理者画面</div>
+    <div style="opacity:.8;">管理者URLは関係者以外にシェアしないでください。</div>
+  </div>
+
+  <!-- サブタブ -->
+  <div class="admin-subnav">
+    <button type="button" class="admin-tab-btn active" onclick="adminTab('rounds',this)"  touch-action="manipulation">📋 ラウンド</button>
+    <button type="button" class="admin-tab-btn"        onclick="adminTab('courses',this)" touch-action="manipulation">🏌️ コース</button>
+    <button type="button" class="admin-tab-btn"        onclick="adminTab('export',this)"  touch-action="manipulation">📥 書き出し</button>
+    <button type="button" class="admin-tab-btn"        onclick="adminTab('stats',this)"   touch-action="manipulation">📊 スタッツ</button>
+    <button type="button" class="admin-tab-btn"        onclick="adminTab('usage',this)"   touch-action="manipulation">💾 DB</button>
+  </div>
+
+  <!-- ① ラウンド管理 -->
+  <div id="atab-rounds" class="admin-tab-content">
+    <div id="bulk-bar" class="bulk-bar" style="display:none;">
+      <span id="bulk-count" style="font-size:13px;font-weight:bold;color:#854d0e;"></span>
+      <div style="display:flex;gap:6px;">
+        <button type="button" class="btn btn-sm" style="background:white;color:var(--gray);" onclick="clearRoundSelection()">解除</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelectedRounds()">選択削除</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="select-all-cb" class="round-checkbox" onchange="toggleSelectAll(this.checked)"> 全選択
+        </label>
+        <span id="round-count" style="font-size:12px;color:var(--gray);"></span>
+      </div>
+    </div>
+    <div id="admin-round-list"><div class="admin-empty">読み込み中...</div></div>
+  </div>
+
+  <!-- ② コース管理 -->
+  <div id="atab-courses" class="admin-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">コースライブラリ</div>
+      <input type="text" id="admin-course-search" placeholder="コース名で検索..." oninput="adminFilterCourses(this.value)" autocomplete="off">
+      <ul class="course-list" id="admin-course-list" style="margin-top:10px;"></ul>
+    </div>
+  </div>
+
+  <!-- ③ 書き出し -->
+  <div id="atab-export" class="admin-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">データエクスポート</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="border:1px solid #d4e6d4;border-radius:10px;padding:14px;">
+          <div style="font-weight:bold;font-size:13px;margin-bottom:4px;">📋 全ラウンド一覧</div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">ラウンド日時・ラベル・ホール数・メンバー・スコアをすべて1ファイルに出力</div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="exportAllRoundsCSV()">CSVダウンロード</button>
+        </div>
+        <div style="border:1px solid #d4e6d4;border-radius:10px;padding:14px;">
+          <div style="font-weight:bold;font-size:13px;margin-bottom:4px;">📊 個人スタッツ一覧</div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">メンバー別のラウンド数・平均スコア・ベストスコアを出力</div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="exportStatsCSV()">CSVダウンロード</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ スタッツ -->
+  <div id="atab-stats" class="admin-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">個人スタッツ（メンバー横断集計）</div>
+      <div id="admin-stats-body"><div class="admin-empty">読み込み中...</div></div>
+    </div>
+  </div>
+
+  <!-- ⑤ DB使用量 -->
+  <div id="atab-usage" class="admin-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Firebase 使用量（目安）</div>
+      <div id="admin-usage-body"><div class="admin-empty">読み込み中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ SCORE -->
+<div id="screen-score" class="screen">
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="score-table" id="score-table"></table>
+    </div>
+  </div>
+  <div id="round-confirm-area" style="display:none;margin:0 0 12px;"></div>
+  <div class="reset-area">
+    <button type="button" class="btn btn-primary btn-sm" onclick="downloadCSV()">CSVダウンロード</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-database.js";
+
+/* ── Firebase ── */
+const firebaseConfig = {
+  apiKey: "AIzaSyCm5fI4F2-jLt6slJMcI9BXu4QAB6U6YKE",
+  authDomain: "golf-score-3ec40.firebaseapp.com",
+  projectId: "golf-score-3ec40",
+  storageBucket: "golf-score-3ec40.firebasestorage.app",
+  messagingSenderId: "153411417276",
+  appId: "1:153411417276:web:c9d04a79d9ba4c353e4cb9",
+  databaseURL: "https://golf-score-3ec40-default-rtdb.firebaseio.com"
+};
+const db = getDatabase(initializeApp(firebaseConfig));
+
+/* ── Admin mode ── */
+const isAdmin = new URLSearchParams(window.location.search).has('admin');
+const ADMIN_PASSWORD = 'NuuGolf';
+
+/* ── State ── */
+let G = { holes: 9, pars: Array(18).fill(4), members: [], scores: {} };
+let ctrMid = null, ctrHole = 0, sessionId = null, unsubSync = null;
+let courses = [];
+let unsubCourses = null;
+let currentRound = {};
+let unsubRound = null;
+
+/* ── Session ── */
+function initSession() {
+  const params = new URLSearchParams(window.location.search);
+  let fromUrl = params.get('session');
+  if (fromUrl === 'null' || fromUrl === 'undefined') fromUrl = null;
+  sessionId = fromUrl;
+  if (!sessionId) {
+    try {
+      const stored = localStorage.getItem('golf_sid');
+      if (stored && stored !== 'null' && stored !== 'undefined') sessionId = stored;
+    } catch(e) {}
+  }
+  const isNew = !sessionId;
+  if (!sessionId) sessionId = crypto.randomUUID();
+  window.history.replaceState({}, '', `?session=${sessionId}`);
+  try { localStorage.setItem('golf_sid', sessionId); } catch(e) {}
+  document.getElementById('session-url-display').textContent = window.location.href;
+  if (isNew) {
+    registerRound(sessionId, G.holes, '');
+    showToast('新しいセッションを開始しました', 'info');
+  }
+}
+
+/* ── Round registry ── */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function registerRound(sid, holes, label) {
+  try {
+    set(ref(db, `rounds/${sid}`), {
+      sessionId: sid,
+      createdAt: Date.now(),
+      holes,
+      label: label || '',
+      date: todayStr()
+    }).catch(() => {});
+  } catch(e) {}
+}
+
+function copySessionUrl() {
+  const url   = window.location.href;
+  const label = (document.getElementById('round-label-input-user')?.value || currentRound.label || '').trim();
+  const date  = (document.getElementById('round-date-input')?.value || currentRound.date || '').trim();
+  // ラベル・日付が設定されている場合はURL上部に添える
+  const header = [label ? `【${label}】` : '', date].filter(Boolean).join(' ');
+  const text   = header ? `${header}\n${url}` : url;
+  const notice = header
+    ? `URLをコピーしました！\n\n${header}\n${url}`
+    : 'URLをコピーしました！\n友人にシェアしてください。';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('URLをコピーしました', 'info'))
+      .catch(() => window.prompt(notice, text));
+  } else {
+    window.prompt(notice, text);
+  }
+}
+
+function newSession() {
+  if (!confirm('新しいラウンドを開始しますか？\n現在のデータは元のURLから引き続きアクセスできます。\n\nホール数・PARは18ホール/PAR4にリセットされます。\nメンバーはリセットされます。')) return;
+  sessionId = crypto.randomUUID();
+  G = { holes: 18, pars: Array(18).fill(4), members: [], scores: {} };
+  window.history.replaceState({}, '', `?session=${sessionId}`);
+  try { localStorage.setItem('golf_sid', sessionId); } catch(e) {}
+  document.getElementById('session-url-display').textContent = window.location.href;
+  registerRound(sessionId, 18, '');
+  currentRound = {};
+  updateRoundMeta();
+  startSync();
+  startRoundSync();
+  save();
+  document.getElementById('btn9').classList.toggle('active',  false);
+  document.getElementById('btn18').classList.toggle('active', true);
+  buildParInputs(); buildMemberList();
+}
+
+/* ── Persistence ── */
+function save() {
+  // localStorage を先に保存（オフライン時のフォールバック）
+  try { localStorage.setItem('golfApp_v1', JSON.stringify(G)); } catch(e) {}
+  // Firebase へ送信（失敗時はトーストで通知）
+  if (!sessionId) return;
+  try {
+    set(ref(db, `sessions/${sessionId}`), G).catch(err => {
+      console.warn('Firebase save failed:', err.message);
+      showToast('⚡ ローカルに保存済み（オフライン中）', 'warn');
+    });
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try { const s = localStorage.getItem('golfApp_v1'); if (s) G = JSON.parse(s); } catch(e) {}
+}
+
+/* ── Firebase sync ── */
+function startSync() {
+  if (unsubSync) unsubSync();
+  unsubSync = onValue(ref(db, `sessions/${sessionId}`), snap => {
+    const raw = snap.val();
+    if (!raw) return;
+    const incoming = JSON.stringify(normalize(raw));
+    if (incoming === JSON.stringify(G)) return;
+    G = normalize(raw);
+    try { localStorage.setItem('golfApp_v1', JSON.stringify(G)); } catch(e) {}
+    refreshUI();
+  });
+}
+
+/* ── Round confirmation sync ── */
+function startRoundSync() {
+  if (unsubRound) { unsubRound(); unsubRound = null; }
+  if (!sessionId) return;
+  unsubRound = onValue(ref(db, `rounds/${sessionId}`), snap => {
+    currentRound = snap.val() || {};
+    if (document.getElementById('screen-score').classList.contains('active')) {
+      updateConfirmArea();
+    }
+    updateRoundMeta();
+  });
+}
+
+function confirmRound() {
+  if (!confirm('ラウンドのスコアを確定しますか？\n確定後も修正は可能です。')) return;
+  const now = Date.now();
+  // set(child/confirmedAt) だと rounds/{sessionId} が未登録の場合に
+  // { confirmedAt } だけの不完全エントリが作られる。
+  // update() で必要なフィールドをすべてマージ書き込みする。
+  const patch = {
+    confirmedAt: now,
+    sessionId,
+    createdAt: currentRound.createdAt || now,
+    holes: G.holes,
+    label: currentRound.label || '',
+    date: currentRound.date || todayStr()
+  };
+  try {
+    update(ref(db, `rounds/${sessionId}`), patch)
+      .then(() => showToast('🏁 ラウンドを確定しました', 'info'))
+      .catch(() => showToast('確定に失敗しました。オンラインか確認してください。', 'error'));
+  } catch(e) { showToast('確定に失敗しました', 'error'); }
+}
+
+let _metaTimer = null;
+function saveRoundMeta() {
+  clearTimeout(_metaTimer);
+  _metaTimer = setTimeout(() => {
+    if (!sessionId) return;
+    const label = document.getElementById('round-label-input-user')?.value.trim() || '';
+    const date  = document.getElementById('round-date-input')?.value || '';
+    update(ref(db, `rounds/${sessionId}`), { label, date }).catch(() => {});
+  }, 500);
+}
+
+function updateRoundMeta() {
+  const labelEl = document.getElementById('round-label-input-user');
+  const dateEl  = document.getElementById('round-date-input');
+  // フォーカス中は上書きしない（入力中のテキストを守る）
+  if (labelEl && document.activeElement !== labelEl)
+    labelEl.value = currentRound.label || '';
+  if (dateEl && document.activeElement !== dateEl)
+    dateEl.value = currentRound.date || todayStr();
+}
+
+function updateConfirmArea() {
+  const area = document.getElementById('round-confirm-area');
+  if (!area) return;
+  if (!G.members.length) { area.style.display = 'none'; return; }
+  area.style.display = '';
+  const ca = currentRound.confirmedAt;
+  if (ca) {
+    const d  = new Date(ca);
+    const ds = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    area.innerHTML = `<div class="confirm-done">🏁 ラウンド確定済み<span>${ds}</span></div>`;
+  } else {
+    area.innerHTML = `<button type="button" class="btn-confirm-round" onclick="confirmRound()">🏁 ラウンドを確定する</button>`;
+  }
+}
+
+function normalize(d) {
+  return {
+    holes:   d.holes || 9,
+    pars:    toArr(d.pars, 18, 4),
+    members: toArr(d.members),
+    scores:  d.scores || {}
+  };
+}
+
+function toArr(val, len, fill) {
+  if (!val) return len ? Array(len).fill(fill) : [];
+  if (Array.isArray(val)) return val;
+  return Object.keys(val).sort((a, b) => Number(a) - Number(b)).map(k => val[k]);
+}
+
+/* ── Connection status ── */
+onValue(ref(db, '.info/connected'), snap => {
+  const dot = document.getElementById('conn-dot');
+  dot.className = `conn-dot ${snap.val() ? 'online' : 'offline'}`;
+  dot.title = snap.val() ? 'オンライン' : 'オフライン';
+});
+
+/* ── UI refresh (remote sync) ── */
+function refreshUI() {
+  const name = (document.querySelector('.screen.active') || {}).id?.replace('screen-', '');
+  if (name === 'members') {
+    document.getElementById('btn9').classList.toggle('active', G.holes === 9);
+    document.getElementById('btn18').classList.toggle('active', G.holes === 18);
+    buildParInputs(); buildMemberList();
+  } else if (name === 'counter') {
+    buildCounter();
+  } else if (name === 'score') {
+    buildScore();
+  }
+}
+
+/* ── Help modal ── */
+function openHelp()  { document.getElementById('help-modal').classList.add('open'); }
+function closeHelp() { document.getElementById('help-modal').classList.remove('open'); }
+function closeHelpOutside(e) { if (e.target === e.currentTarget) closeHelp(); }
+
+/* ── Courses ── */
+function loadCourses() {
+  // 既存リスナーを解除してから再登録（重複蓄積防止）
+  if (unsubCourses) { unsubCourses(); unsubCourses = null; }
+  unsubCourses = onValue(ref(db, 'courses'), snap => {
+    const raw = snap.val();
+    courses = raw
+      ? Object.entries(raw)
+          .map(([id, d]) => ({ id, name: d.name, holes: d.holes || 9, pars: toArr(d.pars, d.holes || 9, 4), savedAt: d.savedAt || 0, deleteRequest: d.deleteRequest || null }))
+          .sort((a, b) => b.savedAt - a.savedAt)
+      : [];
+    filterCourses(document.getElementById('course-search')?.value || '');
+    adminFilterCourses(document.getElementById('admin-course-search')?.value || '');
+  }, err => {
+    console.warn('courses load failed:', err.message);
+    // リスナーをクリアしてから5秒後に再試行
+    if (unsubCourses) { unsubCourses(); unsubCourses = null; }
+    setTimeout(loadCourses, 5000);
+  });
+}
+
+function filterCourses(query) {
+  const list = document.getElementById('course-list');
+  if (!list) return;
+  const q = query.trim();
+  const hits = q ? courses.filter(c => c.name.includes(q)) : courses;
+  if (!hits.length) {
+    list.innerHTML = q
+      ? '<li style="color:var(--gray);font-size:13px;padding:8px 0;">見つかりません</li>'
+      : '';
+    return;
+  }
+  list.innerHTML = hits.slice(0, 8).map(c => {
+    // 18Hコースを9H設定で表示する場合 → OUT/INボタンを出す
+    const splitMode = c.holes === 18 && G.holes === 9;
+    const outPar = c.pars.slice(0, 9).reduce((a, b) => a + b, 0);
+    const inPar  = c.pars.slice(9, 18).reduce((a, b) => a + b, 0);
+    const meta = splitMode
+      ? `18ホール　OUT:${outPar} / IN:${inPar}`
+      : `${c.holes}ホール　PAR ${c.pars.slice(0, c.holes).reduce((a, b) => a + b, 0)}`;
+    const applyBtns = splitMode
+      ? `<button type="button" class="btn btn-primary btn-sm" onclick="applyCourseSection('${c.id}','out')">OUT</button>
+         <button type="button" class="btn btn-sm" style="background:#dbeafe;color:#1e40af;font-weight:bold;" onclick="applyCourseSection('${c.id}','in')">IN</button>`
+      : `<button type="button" class="btn btn-primary btn-sm" onclick="applyCourse('${c.id}')">適用</button>`;
+    const delReqBtn = c.deleteRequest
+      ? `<button type="button" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;" disabled>依頼済み</button>`
+      : `<button type="button" class="btn btn-sm" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-weight:bold;" onclick="requestDeleteCourse('${c.id}')">削除依頼</button>`;
+    return `
+      <li class="course-item">
+        <div>
+          <div class="course-item-name">${esc(c.name)}</div>
+          <div class="course-item-meta">${meta}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          ${applyBtns}
+          ${delReqBtn}
+        </div>
+      </li>`;
+  }).join('');
+}
+
+function applyCourse(id) {
+  const c = courses.find(c => c.id === id);
+  if (!c) return;
+  // ホール数が異なる場合は個別メッセージ
+  let msg;
+  if (c.holes === 9 && G.holes === 18) {
+    msg = `「${c.name}」は9ホール設定です。\n9ホールに変更して適用しますか？`;
+  } else if (c.holes === 18 && G.holes === 9) {
+    msg = `「${c.name}」は18ホール設定です。\n18ホールに変更して適用しますか？`;
+  } else {
+    msg = `「${c.name}」を適用しますか？\nホール数とPARが更新されます。`;
+  }
+  if (!confirm(msg)) return;
+  G.holes = c.holes;
+  G.pars  = [...c.pars];
+  save();
+  document.getElementById('btn9').classList.toggle('active',  G.holes === 9);
+  document.getElementById('btn18').classList.toggle('active', G.holes === 18);
+  buildParInputs();
+  filterCourses(document.getElementById('course-search')?.value || '');
+}
+
+function applyCourseSection(id, section) {
+  const c = courses.find(c => c.id === id);
+  if (!c || c.holes !== 18) return;
+  const label = section === 'out' ? 'OUT（1〜9番）' : 'IN（10〜18番）';
+  if (!confirm(`「${c.name}」の ${label} を適用しますか？\n9ホールのPARが更新されます。`)) return;
+  const srcPars = section === 'out' ? c.pars.slice(0, 9) : c.pars.slice(9, 18);
+  G.holes = 9;
+  // 先頭9要素だけ書き換え（残り9要素は既存値を維持）
+  for (let i = 0; i < 9; i++) G.pars[i] = srcPars[i];
+  save();
+  document.getElementById('btn9').classList.add('active');
+  document.getElementById('btn18').classList.remove('active');
+  buildParInputs();
+  showToast(`${esc(c.name)} ${label} を適用しました`, 'info');
+}
+
+function saveCourse() {
+  const inp  = document.getElementById('course-name-input');
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); return; }
+  push(ref(db, 'courses'), {
+    name, holes: G.holes,
+    pars: G.pars.slice(0, G.holes),
+    savedAt: Date.now()
+  }).then(() => { inp.value = ''; alert(`「${name}」を保存しました。`); })
+    .catch(err => {
+      console.error('saveCourse failed:', err);
+      alert('保存に失敗しました。オンラインか確認してください。');
+    });
+}
+
+function deleteCourse(id) {
+  const c = courses.find(c => c.id === id);
+  if (!c || !confirm(`「${c.name}」を削除しますか？`)) return;
+  remove(ref(db, `courses/${id}`)).catch(() => {});
+}
+
+function requestDeleteCourse(id) {
+  const c = courses.find(c => c.id === id);
+  if (!c) return;
+  if (!confirm(`「${c.name}」の削除を管理者へ依頼しますか？`)) return;
+  set(ref(db, `courses/${id}/deleteRequest`), Date.now())
+    .then(() => showToast('削除依頼を送りました。管理者が対応します。', 'info'))
+    .catch(() => showToast('依頼の送信に失敗しました', 'error'));
+}
+
+function dismissDeleteRequest(id) {
+  const c = courses.find(c => c.id === id);
+  if (!c || !confirm(`「${c.name}」の削除依頼を却下しますか？`)) return;
+  remove(ref(db, `courses/${id}/deleteRequest`))
+    .then(() => showToast('削除依頼を却下しました', 'info'))
+    .catch(() => {});
+}
+
+/* ── Navigation ── */
+function nav(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'counter') buildCounter();
+  if (name === 'score')   buildScore();
+}
+
+/* ── ① Members ── */
+function setHoles(n) {
+  G.holes = n; save();
+  document.getElementById('btn9').classList.toggle('active', n === 9);
+  document.getElementById('btn18').classList.toggle('active', n === 18);
+  buildParInputs();
+  // ホール数変更でOUT/INボタンの出し分けが変わるため再描画
+  filterCourses(document.getElementById('course-search')?.value || '');
+}
+
+function buildParInputs() {
+  const n = G.holes;
+  const chunks = n === 18 ? [[0,9,'OUT (1〜9番)'],[9,18,'IN (10〜18番)']] : [[0,n,'']];
+  document.getElementById('par-inputs').innerHTML = chunks.map(([from, to, label]) =>
+    `<div class="par-section">${label ? `<div class="par-section-label">${label}</div>` : ''}
+     <div class="par-row">${Array.from({length: to-from}, (_,j) => {
+       const i = from + j;
+       return `<div class="par-cell"><span class="par-cell-label">${i+1}</span>
+         <input type="number" min="3" max="5" value="${G.pars[i]}" oninput="setPar(${i},this.value)"></div>`;
+     }).join('')}</div></div>`
+  ).join('');
+}
+
+function setPar(i, v) { G.pars[i] = Math.min(5, Math.max(3, parseInt(v) || 4)); save(); }
+
+function addMember() {
+  const inp = document.getElementById('name-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (G.members.some(m => m.name === name)) {
+    showToast(`「${name}」はすでに登録されています`, 'warn');
+    inp.select();
+    return;
+  }
+  G.members.push({ id: Date.now(), name });
+  save(); inp.value = ''; buildMemberList();
+}
+
+function delMember(id) {
+  if (!confirm('このメンバーを削除しますか？\nスコアも削除されます。')) return;
+  G.members = G.members.filter(m => m.id !== id);
+  Object.keys(G.scores).filter(k => k.startsWith(id + '_')).forEach(k => delete G.scores[k]);
+  if (ctrMid === id) ctrMid = null;
+  save(); buildMemberList();
+}
+
+function buildMemberList() {
+  const ul = document.getElementById('member-list');
+  ul.innerHTML = !G.members.length
+    ? '<li class="empty-msg">メンバーを追加してください</li>'
+    : G.members.map(m => `<li class="member-item">
+        <span class="member-name">${esc(m.name)}</span>
+        <button type="button" class="btn btn-danger btn-sm" onclick="delMember(${m.id})">削除</button>
+      </li>`).join('');
+}
+
+function clearScores() {
+  if (!confirm('スコアをすべてクリアしますか？\nメンバーとPAR設定は残ります。')) return;
+  G.scores = {}; save(); ctrHole = 0;
+}
+
+function resetAll() {
+  if (!confirm('全データ（メンバー・スコア・設定）を削除しますか？')) return;
+  G = { holes: 9, pars: Array(18).fill(4), members: [], scores: {} };
+  save(); ctrMid = null; ctrHole = 0;
+  document.getElementById('btn9').classList.add('active');
+  document.getElementById('btn18').classList.remove('active');
+  buildParInputs(); buildMemberList();
+}
+
+/* ── ② Counter ── */
+function buildCounter() {
+  const memberBar = document.getElementById('ctr-member-tabs');
+  const body = document.getElementById('ctr-body');
+  if (!G.members.length) {
+    memberBar.innerHTML = '<span style="color:var(--gray);font-size:13px;">①でメンバーを登録してください</span>';
+    document.getElementById('ctr-hole-tabs').innerHTML = '';
+    body.style.display = 'none'; return;
+  }
+  body.style.display = '';
+  if (!ctrMid || !G.members.find(m => m.id === ctrMid)) ctrMid = G.members[0].id;
+  if (ctrHole >= G.holes) ctrHole = 0;
+  memberBar.innerHTML = G.members.map(m =>
+    `<button type="button" class="scroll-tab ${m.id === ctrMid ? 'active' : ''}"
+      onclick="selMember(${m.id})">${esc(m.name)}</button>`).join('');
+  buildHoleTabs(); updateCtrDisplay();
+}
+
+function buildHoleTabs() {
+  document.getElementById('ctr-hole-tabs').innerHTML =
+    Array.from({length: G.holes}, (_, i) => {
+      const has = G.scores[`${ctrMid}_${i}`] !== undefined;
+      return `<button type="button" class="hole-tab${i===ctrHole?' active':''}${has?' entered':''}"
+        onclick="selHole(${i})">${i+1}</button>`;
+    }).join('');
+}
+
+function selMember(id) { ctrMid = id; buildCounter(); }
+function selHole(i)    { ctrHole = i; buildHoleTabs(); updateCtrDisplay(); }
+
+function confirmAndNext() {
+  const key = `${ctrMid}_${ctrHole}`;
+  const par = G.pars[ctrHole] ?? 4;
+  // 未入力ならPARを記録
+  if (G.scores[key] === undefined) {
+    G.scores[key] = par;
+    save();
+    buildHoleTabs();
+    updateCtrDisplay();
+  }
+  // 次のホールへ
+  if (ctrHole < G.holes - 1) {
+    selHole(ctrHole + 1);
+  }
+}
+
+function stroke(d) {
+  const key = `${ctrMid}_${ctrHole}`;
+  const par = G.pars[ctrHole] ?? 4;
+  // 最小1打（0以下にはならない。押し続けると1で止まる）
+  const nxt = Math.max(1, (G.scores[key] ?? par) + d);
+  G.scores[key] = nxt;
+  save(); buildHoleTabs(); updateCtrDisplay();
+}
+
+function enterEditMode() {
+  const key = `${ctrMid}_${ctrHole}`;
+  const par = G.pars[ctrHole] ?? 4;
+  const inp = document.getElementById('ctr-num-input');
+  inp.value = G.scores[key] ?? par;
+  document.getElementById('ctr-num').style.display = 'none';
+  inp.style.display = 'block'; inp.focus(); inp.select();
+}
+
+function exitEditMode(val) {
+  // 直接入力も最小1打（ボタンと統一）
+  const v = Math.max(1, Math.min(20, parseInt(val) || 1));
+  const key = `${ctrMid}_${ctrHole}`;
+  G.scores[key] = v;
+  document.getElementById('ctr-num-input').style.display = 'none';
+  document.getElementById('ctr-num').style.display = '';
+  save(); buildHoleTabs(); updateCtrDisplay();
+}
+
+function updateCtrDisplay() {
+  if (document.getElementById('ctr-num-input').style.display === 'block') return;
+  const key = `${ctrMid}_${ctrHole}`;
+  const par = G.pars[ctrHole] ?? 4;
+  const recorded = G.scores[key] !== undefined;
+  const strokes  = G.scores[key] ?? par;
+  const member = G.members.find(m => m.id === ctrMid);
+  document.getElementById('ctr-info').textContent = `${member ? esc(member.name) : ''}　${ctrHole+1}番ホール`;
+  document.getElementById('ctr-num').textContent  = strokes;
+  document.getElementById('ctr-par').textContent  = `PAR ${par}`;
+  const diffEl = document.getElementById('ctr-diff');
+  if (!recorded) { diffEl.textContent = ''; diffEl.className = 'cnt-diff'; return; }
+  if (strokes === 1) { diffEl.textContent = 'Hole-in-one!'; diffEl.className = 'cnt-diff c-eagle'; return; }
+  const [label, cls] = diffInfo(strokes - par);
+  diffEl.textContent = label; diffEl.className = `cnt-diff ${cls}`;
+  const confirmBtn = document.getElementById('btn-confirm');
+  if (confirmBtn) confirmBtn.textContent = '決定　›';
+}
+
+/* ── ③ Score ── */
+function buildScore() {
+  const tbl = document.getElementById('score-table');
+  const ms = G.members, n = G.holes;
+  if (!ms.length) { tbl.innerHTML = `<tr><td class="empty-msg">①でメンバーを登録してください</td></tr>`; updateConfirmArea(); return; }
+  const th = (t, cls='') => `<th${cls ? ` class="${cls}"` : ''}>${t}</th>`;
+  let html = `<thead><tr>${th('H')}${th('PAR','h2')}${ms.map(m => th(esc(m.name))).join('')}</tr></thead><tbody>`;
+  for (let i = 0; i < n; i++) {
+    const par = G.pars[i] ?? 4;
+    html += `<tr><td>${i+1}</td><td style="color:var(--green)">${par}</td>${ms.map(m => scoreCell(m.id, i, par)).join('')}</tr>`;
+  }
+  if (n === 18) { html += subRow('OUT',0,9,ms) + subRow('IN',9,18,ms); }
+  const tp = G.pars.slice(0,n).reduce((a,b)=>a+(b||4),0);
+  html += `<tr class="row-total"><td>合計</td><td>${tp}</td>${ms.map(m => {
+    let t=0, any=false;
+    for (let i=0;i<n;i++) { const s=G.scores[`${m.id}_${i}`]; if(s != null){t+=s;any=true;} }
+    const d=t-tp; return any ? `<td>${t}<br><small style="font-size:10px">${d>0?'+':''}${d}</small></td>` : '<td>—</td>';
+  }).join('')}</tr></tbody>`;
+  tbl.innerHTML = html;
+  updateConfirmArea();
+}
+
+function scoreCell(mid, i, par) {
+  const s = G.scores[`${mid}_${i}`];
+  if (s == null) return '<td style="color:#ccc">—</td>';
+  const d = s - par;
+  return `<td class="${diffClass(d)}">${s}<br><small style="font-size:10px">${d>0?'+':''}${d}</small></td>`;
+}
+
+function subRow(label, from, to, ms) {
+  const par = G.pars.slice(from,to).reduce((a,b)=>a+(b||4),0);
+  return `<tr class="row-sub"><td>${label}</td><td>${par}</td>${ms.map(m => {
+    let t=0, any=false;
+    for(let i=from;i<to;i++){const s=G.scores[`${m.id}_${i}`];if(s>0){t+=s;any=true;}}
+    return any ? `<td>${t}</td>` : '<td>—</td>';
+  }).join('')}</tr>`;
+}
+
+function downloadCSV() {
+  const ms = G.members, n = G.holes;
+  if (!ms.length) { alert('メンバーが登録されていません'); return; }
+  const rows = [['ホール','PAR',...ms.map(m=>m.name)].join(',')];
+  for (let i=0;i<n;i++) {
+    const par = G.pars[i]??4;
+    rows.push([i+1, par, ...ms.map(m => G.scores[`${m.id}_${i}`]??'')].join(','));
+  }
+  if (n===18) {
+    [['OUT',0,9],['IN',9,18]].forEach(([lb,fr,to]) => {
+      const par=G.pars.slice(fr,to).reduce((a,b)=>a+(b||4),0);
+      rows.push([lb, par, ...ms.map(m=>{let t=0,any=false;for(let i=fr;i<to;i++){const s=G.scores[`${m.id}_${i}`];if(s>0){t+=s;any=true;}}return any?t:''})].join(','));
+    });
+  }
+  const tp=G.pars.slice(0,n).reduce((a,b)=>a+(b||4),0);
+  rows.push(['合計',tp,...ms.map(m=>{let t=0,any=false;for(let i=0;i<n;i++){const s=G.scores[`${m.id}_${i}`];if(s>0){t+=s;any=true;}}return any?t:''})].join(','));
+  const now=new Date(), d=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const blob=new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`golf-score-${d}.csv`});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── Admin ── */
+let allRounds = [];
+let selectedRounds = new Set();
+let unsubRounds = null;
+
+function navAdmin(btn) {
+  document.querySelectorAll('#admin-tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function adminTab(name, btn) {
+  document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+  document.getElementById(`atab-${name}`).style.display = '';
+  document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name === 'stats')  loadPlayerStats();
+  if (name === 'usage')  loadDBUsage();
+  if (name === 'courses') adminFilterCourses(document.getElementById('admin-course-search')?.value || '');
+}
+
+function copyAdminUrl() {
+  const url = window.location.origin + window.location.pathname + '?admin';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(() => alert('管理者URLをコピーしました。\n関係者以外にシェアしないでください。'))
+      .catch(() => window.prompt('管理者URL:', url));
+  } else { window.prompt('管理者URL:', url); }
+}
+
+function copyRoundUrl(sid) {
+  const url = window.location.origin + window.location.pathname + `?session=${sid}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(() => alert('ラウンドURLをコピーしました！'))
+      .catch(() => window.prompt('ラウンドURL:', url));
+  } else { window.prompt('ラウンドURL:', url); }
+}
+
+function openRound(sid) {
+  window.open(window.location.origin + window.location.pathname + `?session=${sid}`, '_blank');
+}
+
+function getRoundStatus(r) {
+  if (r.confirmedAt) return { label: '🏁 確定済み', cls: 'status-confirmed' };
+  const sd = r.sessionData;
+  if (!sd) return { label: '⚪ 空', cls: 'status-empty' };
+  const members = sd.members ? (Array.isArray(sd.members) ? sd.members : Object.values(sd.members)) : [];
+  const scores  = sd.scores || {};
+  const holes   = r.holes || sd.holes || 9;
+  if (!members.length)                             return { label: '⚪ 空',    cls: 'status-empty'   };
+  if (!Object.keys(scores).length)                 return { label: '🟡 準備中', cls: 'status-ready'   };
+  if (Object.keys(scores).length >= members.length * holes) return { label: '✅ 完了',  cls: 'status-done'    };
+  return                                                      { label: '🟢 進行中', cls: 'status-ongoing' };
+}
+
+function loadRounds() {
+  if (unsubRounds) { unsubRounds(); unsubRounds = null; }
+  unsubRounds = onValue(ref(db, 'rounds'), async snap => {
+    const raw = snap.val();
+    if (!raw) {
+      allRounds = [];
+      document.getElementById('admin-round-list').innerHTML = '<div class="admin-empty">ラウンド履歴がありません</div>';
+      document.getElementById('round-count').textContent = '';
+      return;
+    }
+    // Firebase のキーが常に正しい sessionId。Object.values だとキーが失われるため
+    // Object.entries で展開し、キーを sessionId として上書きする。
+    // createdAt が欠損している場合（partial write で作られた不完全エントリ）は
+    // confirmedAt をフォールバックとして使用する。
+    const rounds = Object.entries(raw)
+      .map(([key, val]) => ({
+        ...val,
+        sessionId: key,
+        createdAt: val.createdAt || val.confirmedAt || 0
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt);
+    const sessionData = await Promise.all(rounds.map(async r => {
+      try { const s = await get(ref(db, `sessions/${r.sessionId}`)); return s.val(); }
+      catch(e) { return null; }
+    }));
+    allRounds = rounds.map((r, i) => ({ ...r, sessionData: sessionData[i] }));
+    buildAdminRoundList(allRounds);
+    document.getElementById('round-count').textContent = `全 ${rounds.length} ラウンド`;
+  }, err => {
+    console.warn('loadRounds error:', err.message);
+    document.getElementById('admin-round-list').innerHTML = '<div class="admin-empty">読み込みに失敗しました</div>';
+  });
+}
+
+function buildAdminRoundList(rounds) {
+  const container = document.getElementById('admin-round-list');
+  if (!rounds.length) { container.innerHTML = '<div class="admin-empty">ラウンド履歴がありません</div>'; return; }
+  container.innerHTML = rounds.map(r => {
+    const d   = r.createdAt ? new Date(r.createdAt) : null;
+    const ds  = d && !isNaN(d)
+      ? `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+      : '（日時不明）';
+    const url = window.location.origin + window.location.pathname + `?session=${r.sessionId}`;
+    const st  = getRoundStatus(r);
+    const sd  = r.sessionData;
+    const members     = sd?.members ? (Array.isArray(sd.members) ? sd.members : Object.values(sd.members)) : [];
+    const scores      = sd?.scores || {};
+    const holes       = r.holes || sd?.holes || 9;
+    const totalExp    = members.length * holes;
+    const totalFilled = Object.keys(scores).length;
+    const memberNames = members.map(m => esc(m.name)).join('、');
+    const isSel       = selectedRounds.has(r.sessionId);
+    return `
+      <div class="round-item" id="ri-${r.sessionId}" style="${isSel ? 'border-color:var(--green);background:#f0fbf4;' : ''}">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <input type="checkbox" class="round-checkbox" ${isSel ? 'checked' : ''}
+            onchange="toggleRoundSelect('${r.sessionId}',this.checked)">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="round-item-date">${r.date || ds}</span>
+              <span class="round-status ${st.cls}">${st.label}</span>
+            </div>
+            <div class="round-item-meta">${r.label ? `<strong>${esc(r.label)}</strong>　` : ''}${holes}ホール${members.length ? `　${members.length}名` : ''}${totalFilled ? `　スコア ${totalFilled}/${totalExp}` : ''}</div>
+            <div style="font-size:11px;color:#aaa;">作成: ${ds}</div>
+            ${memberNames ? `<div class="round-item-members">${memberNames}</div>` : ''}
+            <input type="text" class="round-label-input" placeholder="ラベルを入力（例：春季コンペ 第2回）"
+              value="${esc(r.label || '')}" onchange="saveRoundLabel('${r.sessionId}',this.value)">
+            <div class="round-item-link">${url}</div>
+          </div>
+        </div>
+        <div class="round-item-actions">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openRound('${r.sessionId}')">スコアを開く</button>
+          <button type="button" class="btn btn-sm" style="background:#e2e8e2;color:var(--green2);" onclick="copyRoundUrl('${r.sessionId}')">URLコピー</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="deleteRound('${r.sessionId}')">削除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function saveRoundLabel(sid, label) {
+  try { set(ref(db, `rounds/${sid}/label`), label.trim()).catch(() => {}); } catch(e) {}
+}
+
+function toggleRoundSelect(sid, checked) {
+  if (checked) selectedRounds.add(sid); else selectedRounds.delete(sid);
+  updateBulkBar();
+  const item = document.getElementById(`ri-${sid}`);
+  if (item) { item.style.borderColor = checked ? 'var(--green)' : ''; item.style.background = checked ? '#f0fbf4' : ''; }
+}
+
+function toggleSelectAll(checked) {
+  allRounds.forEach(r => {
+    toggleRoundSelect(r.sessionId, checked);
+    const cb = document.querySelector(`#ri-${r.sessionId} input[type=checkbox]`);
+    if (cb) cb.checked = checked;
+  });
+}
+
+function clearRoundSelection() {
+  selectedRounds.clear();
+  document.querySelectorAll('#admin-round-list input[type=checkbox]').forEach(cb => cb.checked = false);
+  const sa = document.getElementById('select-all-cb'); if (sa) sa.checked = false;
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const n   = selectedRounds.size;
+  if (n > 0) { bar.style.display = ''; document.getElementById('bulk-count').textContent = `${n} 件選択中`; }
+  else        { bar.style.display = 'none'; }
+}
+
+function deleteSelectedRounds() {
+  const n = selectedRounds.size;
+  if (!n) return;
+  if (!confirm(`選択した ${n} 件のラウンドを削除しますか？\nスコアデータも削除されます。この操作は元に戻せません。`)) return;
+  selectedRounds.forEach(sid => {
+    remove(ref(db, `rounds/${sid}`)).catch(() => {});
+    remove(ref(db, `sessions/${sid}`)).catch(() => {});
+  });
+  selectedRounds.clear();
+  updateBulkBar();
+  const sa = document.getElementById('select-all-cb'); if (sa) sa.checked = false;
+}
+
+function deleteRound(sid) {
+  if (!confirm('このラウンドを削除しますか？\nスコアデータも削除されます。この操作は元に戻せません。')) return;
+  remove(ref(db, `rounds/${sid}`)).catch(() => {});
+  remove(ref(db, `sessions/${sid}`)).catch(() => {});
+}
+
+/* ── Admin: コース管理 ── */
+function adminFilterCourses(query) {
+  const list = document.getElementById('admin-course-list');
+  if (!list) return;
+  const q   = query.trim();
+  const hits = q ? courses.filter(c => c.name.includes(q)) : courses;
+  if (!hits.length) {
+    list.innerHTML = `<li style="color:var(--gray);font-size:13px;padding:8px 0;">${q ? '見つかりません' : 'コースが登録されていません'}</li>`;
+    return;
+  }
+  list.innerHTML = hits.map(c => {
+    const totalPar = c.pars.slice(0, c.holes).reduce((a, b) => a + b, 0);
+    const reqBadge = c.deleteRequest
+      ? `<span class="del-req-badge">🗑 削除依頼あり</span>` : '';
+    // PAR詳細チップ生成
+    const chipRow = (pars, fromLabel) => {
+      const chips = pars.map((p, i) => `<span class="par-chip">${p}</span>`).join('');
+      const sub   = pars.reduce((a, b) => a + b, 0);
+      return `<div><span style="font-weight:bold;color:var(--green2);">${fromLabel}</span>　${chips}　<span style="font-weight:bold;">計${sub}</span></div>`;
+    };
+    const detail = c.holes === 18
+      ? chipRow(c.pars.slice(0, 9),  'OUT 1〜9番') + chipRow(c.pars.slice(9, 18), 'IN 10〜18番')
+      : chipRow(c.pars.slice(0, c.holes), `1〜${c.holes}番`);
+    const dismissBtn = c.deleteRequest
+      ? `<button type="button" class="btn btn-sm btn-outline-warn" onclick="dismissDeleteRequest('${c.id}')">依頼却下</button>` : '';
+    return `
+      <li style="border-bottom:1px solid #eef2ee;padding:12px 4px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="min-width:0;">
+            <div class="course-item-name">${esc(c.name)}${reqBadge}</div>
+            <div class="course-item-meta">${c.holes}ホール　PAR ${totalPar}</div>
+            <div class="course-par-detail">${detail}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+            ${dismissBtn}
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteCourse('${c.id}')">削除</button>
+          </div>
+        </div>
+      </li>`;
+  }).join('');
+}
+
+/* ── Admin: 個人スタッツ ── */
+function _buildStats() {
+  const stats = {};
+  for (const r of allRounds) {
+    const sd = r.sessionData; if (!sd) continue;
+    const members = sd.members ? (Array.isArray(sd.members) ? sd.members : Object.values(sd.members)) : [];
+    const scores  = sd.scores || {};
+    const holes   = r.holes || sd.holes || 9;
+    const pars    = sd.pars  ? (Array.isArray(sd.pars)  ? sd.pars  : Object.values(sd.pars))  : Array(18).fill(4);
+    const totalPar = pars.slice(0, holes).reduce((a, b) => a + (b||4), 0);
+    for (const m of members) {
+      if (!stats[m.name]) stats[m.name] = { rounds: 0, totals: [], pars: [] };
+      let total = 0, ok = true;
+      for (let i = 0; i < holes; i++) { const s = scores[`${m.id}_${i}`]; if (s === undefined) { ok = false; break; } total += s; }
+      if (ok && total > 0) { stats[m.name].rounds++; stats[m.name].totals.push(total); stats[m.name].pars.push(totalPar); }
+    }
+  }
+  return stats;
+}
+
+function loadPlayerStats() {
+  const container = document.getElementById('admin-stats-body');
+  if (!allRounds.length) {
+    container.innerHTML = '<div class="admin-empty">ラウンドデータがありません<br><small style="color:#aaa;">ラウンドタブを先に開いてください</small></div>';
+    return;
+  }
+  const stats   = _buildStats();
+  const entries = Object.entries(stats).filter(([,s]) => s.rounds > 0);
+  if (!entries.length) {
+    container.innerHTML = '<div class="admin-empty">集計できるデータがありません<br><small style="color:#aaa;">全ホール入力済みのラウンドが対象です</small></div>';
+    return;
+  }
+  entries.sort(([,a],[,b]) => (a.totals.reduce((x,y)=>x+y,0)/a.rounds) - (b.totals.reduce((x,y)=>x+y,0)/b.rounds));
+  container.innerHTML = `
+    <div class="tbl-wrap" style="margin-bottom:8px;">
+      <table class="stats-table">
+        <thead><tr><th>メンバー</th><th>R数</th><th>平均</th><th>ベスト</th><th>vs PAR</th></tr></thead>
+        <tbody>${entries.map(([name,s]) => {
+          const avg    = (s.totals.reduce((a,b)=>a+b,0)/s.rounds).toFixed(1);
+          const best   = Math.min(...s.totals);
+          const avgPar = (s.pars.reduce((a,b)=>a+b,0)/s.rounds).toFixed(1);
+          const vsPar  = (parseFloat(avg)-parseFloat(avgPar)).toFixed(1);
+          const col    = parseFloat(vsPar) <= 0 ? 'var(--green)' : parseFloat(vsPar) <= 10 ? 'var(--gray)' : 'var(--red)';
+          return `<tr>
+            <td>${esc(name)}</td><td>${s.rounds}</td><td>${avg}</td><td>${best}</td>
+            <td style="color:${col};font-weight:bold;">${parseFloat(vsPar)>0?'+':''}${vsPar}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--gray);">※ 全ホール入力済みのラウンドのみ集計対象</p>`;
+}
+
+/* ── Admin: エクスポート ── */
+async function exportAllRoundsCSV() {
+  if (!allRounds.length) { alert('ラウンドデータがありません'); return; }
+  const maxH  = Math.max(...allRounds.map(r => r.holes || 9));
+  const hHdrs = Array.from({length: maxH}, (_, i) => `H${i+1}`);
+  const rows  = [['No','日付','ラベル','ホール','メンバー',...hHdrs,'OUT','IN','合計','vs PAR'].join(',')];
+  let rNo = allRounds.length;
+  for (const r of allRounds) {
+    const d  = new Date(r.createdAt);
+    const ds = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    const sd = r.sessionData; if (!sd) { rNo--; continue; }
+    const members  = sd.members ? (Array.isArray(sd.members) ? sd.members : Object.values(sd.members)) : [];
+    const scores   = sd.scores  || {};
+    const holes    = r.holes || sd.holes || 9;
+    const pars     = sd.pars ? (Array.isArray(sd.pars) ? sd.pars : Object.values(sd.pars)) : Array(18).fill(4);
+    const totalPar = pars.slice(0, holes).reduce((a, b) => a + (b||4), 0);
+    if (!members.length) { rows.push([rNo,ds,r.label||'',holes,'（未登録）',...Array(maxH+4).fill('')].join(',')); }
+    for (const m of members) {
+      const hs    = Array.from({length: maxH}, (_,i) => i < holes ? (scores[`${m.id}_${i}`]??'') : '');
+      const total = hs.filter((_,i)=>i<holes&&hs[i]!=='').reduce((a,b)=>a+(b||0),0) || '';
+      const out   = holes>=9  ? hs.slice(0,9).filter(s=>s!=='').reduce((a,b)=>a+(b||0),0)||'' : '';
+      const inp   = holes>=18 ? hs.slice(9,18).filter(s=>s!=='').reduce((a,b)=>a+(b||0),0)||'' : '';
+      const vp    = total!=='' ? (total-totalPar>0?'+':'')+(total-totalPar) : '';
+      rows.push([rNo,ds,r.label||'',holes,m.name,...hs,out,inp,total,vp].join(','));
+    }
+    rNo--;
+  }
+  const now=new Date(), fn=`golf-all-rounds-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  const blob=new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:fn}).click();
+}
+
+function exportStatsCSV() {
+  const stats   = _buildStats();
+  const entries = Object.entries(stats).filter(([,s])=>s.rounds>0)
+    .sort(([,a],[,b])=>(a.totals.reduce((x,y)=>x+y,0)/a.rounds)-(b.totals.reduce((x,y)=>x+y,0)/b.rounds));
+  if (!entries.length) { alert('集計できるデータがありません'); return; }
+  const rows=[['メンバー','ラウンド数','平均スコア','ベスト','最悪','vs PAR平均'].join(',')];
+  for (const [name,s] of entries) {
+    const avg   = (s.totals.reduce((a,b)=>a+b,0)/s.rounds).toFixed(1);
+    const avgP  = (s.pars.reduce((a,b)=>a+b,0)/s.rounds).toFixed(1);
+    const vsPar = (parseFloat(avg)-parseFloat(avgP)).toFixed(1);
+    rows.push([name,s.rounds,avg,Math.min(...s.totals),Math.max(...s.totals),(vsPar>0?'+':'')+vsPar].join(','));
+  }
+  const now=new Date(), fn=`golf-stats-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  const blob=new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:fn}).click();
+}
+
+/* ── Admin: DB使用量 ── */
+async function loadDBUsage() {
+  const el = document.getElementById('admin-usage-body');
+  el.innerHTML = '<div class="admin-empty">計算中...</div>';
+  try {
+    const cs = await get(ref(db, 'courses'));
+    const cCount = cs.val() ? Object.keys(cs.val()).length : 0;
+    let est = allRounds.length * 200 + cCount * 300;
+    for (const r of allRounds) {
+      const sd = r.sessionData; if (!sd) { est += 100; continue; }
+      const mc = sd.members ? (Array.isArray(sd.members) ? sd.members : Object.values(sd.members)).length : 0;
+      est += 500 + mc*50 + Object.keys(sd.scores||{}).length*30;
+    }
+    const toKB=b=>(b/1024).toFixed(1), toMB=b=>(b/1048576).toFixed(2);
+    const pct = Math.min(100, est/1073741824*100);
+    const barCls = pct>80?'danger':pct>50?'warn':'';
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+        <div style="text-align:center;background:var(--light-gray);border-radius:10px;padding:12px;">
+          <div style="font-size:26px;font-weight:bold;color:var(--green);">${allRounds.length}</div>
+          <div style="font-size:11px;color:var(--gray);">ラウンド</div>
+        </div>
+        <div style="text-align:center;background:var(--light-gray);border-radius:10px;padding:12px;">
+          <div style="font-size:26px;font-weight:bold;color:var(--green);">${cCount}</div>
+          <div style="font-size:11px;color:var(--gray);">コース</div>
+        </div>
+        <div style="text-align:center;background:var(--light-gray);border-radius:10px;padding:12px;">
+          <div style="font-size:22px;font-weight:bold;color:var(--green);">${toKB(est)}</div>
+          <div style="font-size:11px;color:var(--gray);">推定 KB</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+        <span>ストレージ使用量（推定）</span><span>${toMB(est)} MB / 1,024 MB</span>
+      </div>
+      <div class="usage-bar-wrap"><div class="usage-bar ${barCls}" style="width:${Math.max(pct,0.3)}%;"></div></div>
+      <div style="font-size:11px;color:var(--gray);margin-top:4px;margin-bottom:16px;">無料枠の約 ${pct.toFixed(3)}% を使用（推定）</div>
+      <div style="background:var(--pale-green);border-radius:8px;padding:12px;font-size:12px;">
+        <div style="font-weight:bold;color:var(--green2);margin-bottom:8px;">Firebase 無料枠（Spark プラン）</div>
+        <div style="display:grid;gap:5px;color:var(--green2);">
+          <div>📦 ストレージ: 1 GB</div>
+          <div>🔄 月間転送量: 10 GB</div>
+          <div>👥 同時接続: 100</div>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--gray);margin-top:8px;">※ 推定値です。正確な値は <a href="https://console.firebase.google.com/" target="_blank" style="color:var(--green);">Firebase Console</a> でご確認ください。</p>`;
+  } catch(e) {
+    el.innerHTML = '<div class="admin-empty">使用量の取得に失敗しました</div>';
+  }
+}
+
+/* ── Helpers ── */
+let _toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function diffInfo(d) {
+  if (d<=-4) return ['Condor','c-eagle'];
+  if (d===-3) return ['Albatross','c-eagle'];
+  if (d===-2) return ['Eagle','c-eagle'];
+  if (d===-1) return ['Birdie','c-birdie'];
+  if (d===0)  return ['Par','c-par'];
+  if (d===1)  return ['Bogey','c-bogey'];
+  if (d===2)  return ['Double Bogey','c-double'];
+  return ['','c-triple'];
+}
+function diffClass(d) {
+  if (d<=-2) return 's-eagle'; if (d===-1) return 's-birdie';
+  if (d===0)  return 's-par';  if (d===1)  return 's-bogey';
+  if (d===2)  return 's-double'; return 's-triple';
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Init ── */
+if (isAdmin) {
+  const isAuthed = () => sessionStorage.getItem('admin_auth') === '1';
+  if (!isAuthed()) {
+    const pw = prompt('管理者パスワードを入力してください');
+    if (pw !== ADMIN_PASSWORD) {
+      alert('パスワードが違います');
+      window.location.replace(window.location.pathname);
+    } else {
+      sessionStorage.setItem('admin_auth', '1');
+    }
+  }
+  if (isAuthed()) {
+    // 管理者モード: 通常タブを非表示にして管理者画面を表示
+    document.getElementById('main-tabs').style.display  = 'none';
+    document.getElementById('admin-tabs').style.display = '';
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    const adminScr = document.getElementById('screen-admin');
+    adminScr.style.display = '';
+    adminScr.classList.add('active');
+    // 接続状態監視はグローバルの onValue('.info/connected') が担当するため重複登録しない
+    loadCourses();
+    loadRounds();
+  }
+} else {
+  // 通常ユーザーモード
+  loadLocal();
+  initSession();
+  document.getElementById('btn9').classList.toggle('active',  G.holes === 9);
+  document.getElementById('btn18').classList.toggle('active', G.holes === 18);
+  buildParInputs();
+  buildMemberList();
+  startSync();
+  startRoundSync();
+  loadCourses();
+}
+
+/* ── Expose for onclick attrs ── */
+Object.assign(window, {
+  nav, setHoles, setPar, addMember, delMember, resetAll, clearScores,
+  selMember, selHole, stroke, enterEditMode, exitEditMode, downloadCSV,
+  copySessionUrl, newSession,
+  filterCourses, applyCourse, applyCourseSection, saveCourse, deleteCourse, requestDeleteCourse, dismissDeleteRequest,
+  openHelp, closeHelp, closeHelpOutside,
+  confirmAndNext, confirmRound, updateConfirmArea, saveRoundMeta,
+  // admin
+  navAdmin, adminTab, copyRoundUrl, openRound,
+  deleteRound, deleteSelectedRounds, clearRoundSelection,
+  toggleRoundSelect, toggleSelectAll, saveRoundLabel,
+  adminFilterCourses, loadPlayerStats, exportAllRoundsCSV, exportStatsCSV, loadDBUsage
+});
+</script>
+</body>
+</html>

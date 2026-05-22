@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>静的ホスティング比較 2026 — Cloudflare Pages vs Netlify vs GitHub Pages</title>
+  <style>
+    :root {
+      --cf:      #f6821f;
+      --cf-bg:   #fff7f0;
+      --cf-dark: #c06010;
+      --nl:      #00ad9f;
+      --nl-bg:   #f0fffe;
+      --nl-dark: #007a70;
+      --gh:      #24292f;
+      --gh-bg:   #f6f8fa;
+      --gh-dark: #1a1e22;
+      --green:   #16a34a;
+      --red:     #dc2626;
+      --yellow:  #ca8a04;
+      --gray:    #6b7280;
+      --border:  #e5e7eb;
+      --bg:      #f8fafc;
+      --text:    #111827;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans',
+                   'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f4c81 100%);
+      color: white;
+      padding: 52px 24px 44px;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: .6;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: clamp(22px, 5vw, 34px);
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: -.5px;
+    }
+    .hero-sub {
+      font-size: 14px;
+      opacity: .75;
+      max-width: 540px;
+      margin: 0 auto 28px;
+    }
+    .hero-badges {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .hero-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: .5px;
+    }
+    .badge-cf { background: var(--cf);  color: white; }
+    .badge-nl { background: var(--nl);  color: white; }
+    .badge-gh { background: #e5e7eb;    color: #1f2937; }
+
+    /* ── Layout ── */
+    .container { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 18px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Alert ── */
+    .alert {
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .alert-warn  { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .alert-info  { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .alert-green { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .alert-title { font-weight: bold; margin-bottom: 4px; }
+    code {
+      background: #f3f4f6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 12px;
+      color: #7c3aed;
+    }
+
+    /* ── Service cards ── */
+    .service-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 640px) { .service-cards { grid-template-columns: 1fr; } }
+    .service-card {
+      border-radius: 12px;
+      padding: 18px 16px;
+      border: 2px solid transparent;
+    }
+    .service-card-cf { background: var(--cf-bg); border-color: var(--cf); }
+    .service-card-nl { background: var(--nl-bg); border-color: var(--nl); }
+    .service-card-gh { background: var(--gh-bg); border-color: #d1d5db; }
+    .service-card-name {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .service-card-cf .service-card-name { color: var(--cf-dark); }
+    .service-card-nl .service-card-name { color: var(--nl-dark); }
+    .service-card-gh .service-card-name { color: var(--gh-dark); }
+    .service-card-tagline {
+      font-size: 11px;
+      color: var(--gray);
+      margin-bottom: 12px;
+    }
+    .service-card-items { list-style: none; padding: 0; }
+    .service-card-items li {
+      font-size: 12px;
+      padding: 3px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .service-card-items li::before { content: '›'; font-weight: bold; flex-shrink: 0; }
+    .service-card-cf .service-card-items li::before { color: var(--cf); }
+    .service-card-nl .service-card-items li::before { color: var(--nl); }
+    .service-card-gh .service-card-items li::before { color: var(--gh); }
+
+    /* ── Comparison table ── */
+    .tbl-wrap { overflow-x: auto; margin-bottom: 14px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 560px;
+    }
+    th {
+      padding: 10px 14px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    th.th-item { text-align: left; background: #f1f5f9; color: #475569; }
+    th.th-cf   { background: var(--cf);  color: white; }
+    th.th-nl   { background: var(--nl);  color: white; }
+    th.th-gh   { background: var(--gh);  color: white; }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    td.td-item { font-size: 12px; color: #374151; font-weight: 500; }
+    td.td-val  { text-align: center; font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .val-best   { color: var(--green); font-weight: 700; }
+    .val-ok     { color: #374151; }
+    .val-warn   { color: var(--yellow); font-weight: 600; }
+    .val-bad    { color: var(--red); }
+    .icon-ok    { color: var(--green); }
+    .icon-warn  { color: var(--yellow); }
+    .icon-bad   { color: var(--red); }
+
+    /* ── Score bars ── */
+    .score-section { margin-bottom: 14px; }
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .score-label { font-size: 12px; color: #374151; width: 180px; flex-shrink: 0; }
+    .score-bars { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+    .score-bar-row { display: flex; align-items: center; gap: 6px; }
+    .score-bar-name { font-size: 10px; width: 60px; flex-shrink: 0; color: var(--gray); text-align: right; }
+    .score-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .3s;
+    }
+    .fill-cf { background: var(--cf); }
+    .fill-nl { background: var(--nl); }
+    .fill-gh { background: var(--gh); }
+    .score-num { font-size: 11px; color: var(--gray); width: 28px; flex-shrink: 0; }
+    @media (max-width: 600px) {
+      .score-row { flex-direction: column; align-items: flex-start; }
+      .score-label { width: 100%; }
+    }
+
+    /* ── Code block ── */
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 10px;
+      padding: 16px 18px;
+      font-size: 12px;
+      overflow-x: auto;
+      line-height: 1.65;
+      margin: 8px 0 14px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+    }
+    .c-comment { color: #6c7086; }
+    .c-key     { color: #89b4fa; }
+    .c-val     { color: #a6e3a1; }
+    .c-str     { color: #f9e2af; }
+    .c-red     { color: #f38ba8; }
+
+    /* ── Verdict card ── */
+    .verdict {
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .verdict::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 6px;
+      height: 100%;
+    }
+    .verdict-cf::before { background: var(--cf); }
+    .verdict-nl::before { background: var(--nl); }
+    .verdict-gh::before { background: var(--gh); }
+    .verdict-cf { background: var(--cf-bg); border: 1px solid #fcd9b0; }
+    .verdict-nl { background: var(--nl-bg); border: 1px solid #99e8e2; }
+    .verdict-gh { background: var(--gh-bg); border: 1px solid #d1d5db; }
+    .verdict-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .verdict-crown { font-size: 20px; }
+    .verdict-name  { font-size: 16px; font-weight: 800; }
+    .verdict-cf .verdict-name { color: var(--cf-dark); }
+    .verdict-nl .verdict-name { color: var(--nl-dark); }
+    .verdict-gh .verdict-name { color: var(--gh-dark); }
+    .verdict-tag {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+    .verdict-cf .verdict-tag { background: var(--cf);  color: white; }
+    .verdict-nl .verdict-tag { background: var(--nl);  color: white; }
+    .verdict-gh .verdict-tag { background: var(--gh);  color: white; }
+    .verdict-body { font-size: 13px; line-height: 1.7; }
+    .verdict-points {
+      margin-top: 10px;
+      padding-left: 0;
+      list-style: none;
+    }
+    .verdict-points li {
+      font-size: 12px;
+      padding: 3px 0 3px 18px;
+      position: relative;
+    }
+    .verdict-points li::before {
+      position: absolute;
+      left: 0;
+      content: '✓';
+      font-weight: bold;
+    }
+    .verdict-cf .verdict-points li::before { color: var(--cf); }
+    .verdict-nl .verdict-points li::before { color: var(--nl); }
+    .verdict-gh .verdict-points li::before { color: var(--gh); }
+
+    /* ── Use case tags ── */
+    .use-cases {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .use-tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid;
+    }
+    .use-tag-cf { color: var(--cf-dark); border-color: var(--cf); background: var(--cf-bg); }
+    .use-tag-nl { color: var(--nl-dark); border-color: var(--nl); background: var(--nl-bg); }
+    .use-tag-gh { color: #374151; border-color: #9ca3af; background: #f9fafb; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      color: var(--gray);
+      font-size: 11px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      line-height: 1.8;
+    }
+
+    /* ── Misc ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+    strong { font-weight: 700; }
+    .text-gray { color: var(--gray); font-size: 12px; }
+    .mt8 { margin-top: 8px; }
+    .mb16 { margin-bottom: 16px; }
+    sup { font-size: 9px; color: var(--gray); vertical-align: super; }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">Static Hosting Comparison 2026</div>
+  <div class="hero-title">Cloudflare Pages vs Netlify vs GitHub Pages</div>
+  <div class="hero-sub">静的サイト・SPAホスティングの3大サービスを徹底比較。無料枠・パフォーマンス・セキュリティ・拡張性を網羅。</div>
+  <div class="hero-badges">
+    <span class="hero-badge badge-cf">☁ Cloudflare Pages</span>
+    <span class="hero-badge badge-nl">◈ Netlify</span>
+    <span class="hero-badge badge-gh">◉ GitHub Pages</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 注目の変更 -->
+  <div class="section">
+    <div class="alert alert-warn">
+      <div class="alert-title">⚠️ 2025年9月〜 Netlify が新料金体系に移行（要注意）</div>
+      2025年9月4日以降に作成された新規アカウントは「クレジット制」に変更。無料枠は <strong>300クレジット/月</strong> で、本番デプロイ1回に15クレジットを消費するため <strong>実質20回/月でビルド上限</strong> に達する。頻繁に更新するアプリでは想定外にクレジットが枯渇する。
+    </div>
+    <div class="alert alert-info">
+      <div class="alert-title">💡 この比較について</div>
+      2026年5月時点の各サービス公式ドキュメントをもとに作成。料金・仕様は変更される場合があります。
+    </div>
+  </div>
+
+  <!-- サービス概要 -->
+  <div class="section">
+    <div class="section-title">🔍 サービス概要</div>
+    <div class="service-cards">
+      <div class="service-card service-card-cf">
+        <div class="service-card-name">☁ Cloudflare Pages</div>
+        <div class="service-card-tagline">世界最大CDN ✕ Workers</div>
+        <ul class="service-card-items">
+          <li>帯域幅<strong>無制限</strong>（無料）</li>
+          <li>300+ 拠点 CDN</li>
+          <li>Workers でサーバーサイド処理</li>
+          <li>D1 / KV / R2 ストレージ連携</li>
+          <li>DDoS 防御が業界最高水準</li>
+          <li>Netlify と互換の設定ファイル</li>
+        </ul>
+      </div>
+      <div class="service-card service-card-nl">
+        <div class="service-card-name">◈ Netlify</div>
+        <div class="service-card-tagline">DX重視・フル機能プラットフォーム</div>
+        <ul class="service-card-items">
+          <li>開発体験・ドキュメントが最優秀</li>
+          <li>Deploy Previews（PR ごと）</li>
+          <li>Functions / Edge Functions</li>
+          <li>フォーム処理・Identity 内蔵</li>
+          <li>日本語情報が豊富</li>
+          <li class="val-warn">新規は300クレジット/月制限</li>
+        </ul>
+      </div>
+      <div class="service-card service-card-gh">
+        <div class="service-card-name">◉ GitHub Pages</div>
+        <div class="service-card-tagline">最もシンプル・完全無料</div>
+        <ul class="service-card-items">
+          <li>完全無料（上限クレジットなし）</li>
+          <li>GitHub と完全統合</li>
+          <li>設定がほぼ不要</li>
+          <li>公開リポジトリ限定（無料）</li>
+          <li class="val-bad">サーバーサイド処理は不可</li>
+          <li class="val-bad">セキュリティヘッダー設定不可</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 料金・無料枠 -->
+  <div class="section">
+    <div class="section-title">💰 料金・無料枠の詳細</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Pages</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">無料プラン</td>
+            <td class="td-val val-best">$0（永続）</td>
+            <td class="td-val val-ok">$0（クレジット制）</td>
+            <td class="td-val val-best">$0（完全無料）</td>
+          </tr>
+          <tr>
+            <td class="td-item">有料プラン</td>
+            <td class="td-val">Pro $20/月</td>
+            <td class="td-val">Pro $20/月〜</td>
+            <td class="td-val val-best">なし</td>
+          </tr>
+          <tr>
+            <td class="td-item">帯域幅（月）</td>
+            <td class="td-val val-best"><strong>無制限</strong> 🏆</td>
+            <td class="td-val val-warn">クレジット消費<sup>※</sup></td>
+            <td class="td-val val-ok">100GB</td>
+          </tr>
+          <tr>
+            <td class="td-item">ビルド回数（月）</td>
+            <td class="td-val val-best">500回</td>
+            <td class="td-val val-warn"><strong>実質20回</strong><sup>※</sup></td>
+            <td class="td-val val-ok">10回/時間</td>
+          </tr>
+          <tr>
+            <td class="td-item">同時ビルド数</td>
+            <td class="td-val">1</td>
+            <td class="td-val">1</td>
+            <td class="td-val">1</td>
+          </tr>
+          <tr>
+            <td class="td-item">プレビューデプロイ</td>
+            <td class="td-val icon-ok">✅ 無制限</td>
+            <td class="td-val icon-ok">✅ あり</td>
+            <td class="td-val icon-bad">❌ なし</td>
+          </tr>
+          <tr>
+            <td class="td-item">カスタムドメイン</td>
+            <td class="td-val val-best">100個</td>
+            <td class="td-val val-ok">無制限</td>
+            <td class="td-val val-warn">1個</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-gray">※ Netlify 新規アカウント：300クレジット/月。本番デプロイ1回=15クレジット、帯域1GB=20クレジット。</p>
+
+    <div class="mt8">
+      <pre><span class="c-comment"># Netlify 新クレジット制の計算例</span>
+
+<span class="c-key">無料枠</span>: 300 クレジット / 月
+
+<span class="c-key">消費レート</span>:
+  本番デプロイ 1回     → <span class="c-red">15 クレジット</span>
+  帯域幅 1GB           → <span class="c-red">20 クレジット</span>
+  Functions 1GB時間    → <span class="c-red">10 クレジット</span>
+
+<span class="c-comment"># デプロイのみで試算</span>
+  300 ÷ 15 = <span class="c-red">月 20回 デプロイでビルド上限到達</span>
+  帯域 5GB 消費した場合: 残り 300 - 100 = 200c → 13回分のみ</pre>
+    </div>
+  </div>
+
+  <!-- CDN・パフォーマンス -->
+  <div class="section">
+    <div class="section-title">🚀 CDN・パフォーマンス</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Pages</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">CDN拠点数</td>
+            <td class="td-val val-best"><strong>300+</strong> 箇所 🏆</td>
+            <td class="td-val val-ok">数十箇所</td>
+            <td class="td-val val-ok">GitHub インフラ</td>
+          </tr>
+          <tr>
+            <td class="td-item">日本拠点</td>
+            <td class="td-val icon-ok">✅ 東京・大阪等</td>
+            <td class="td-val icon-warn">△ 少なめ</td>
+            <td class="td-val icon-warn">△</td>
+          </tr>
+          <tr>
+            <td class="td-item">HTTP/3 対応</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-warn">△</td>
+            <td class="td-val icon-warn">△</td>
+          </tr>
+          <tr>
+            <td class="td-item">自動HTTPS</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+          </tr>
+          <tr>
+            <td class="td-item">キャッシュ制御</td>
+            <td class="td-val val-best">詳細設定可</td>
+            <td class="td-val val-ok">基本のみ</td>
+            <td class="td-val val-bad">ほぼ不可</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- セキュリティ -->
+  <div class="section">
+    <div class="section-title">🔒 セキュリティ機能</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Pages</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">セキュリティヘッダー設定<br><span style="font-size:11px;color:#9ca3af;">CSP / X-Frame 等</span></td>
+            <td class="td-val icon-ok">✅ <code>_headers</code>ファイル</td>
+            <td class="td-val icon-ok">✅ <code>_headers</code>ファイル</td>
+            <td class="td-val icon-bad">❌ <strong>設定不可</strong></td>
+          </tr>
+          <tr>
+            <td class="td-item">DDoS 防御</td>
+            <td class="td-val val-best">✅ 業界最高水準 🏆</td>
+            <td class="td-val icon-ok">✅ 基本あり</td>
+            <td class="td-val icon-warn">△ GitHub任せ</td>
+          </tr>
+          <tr>
+            <td class="td-item">WAF（Webアプリ FW）</td>
+            <td class="td-val icon-ok">✅（上位プラン）</td>
+            <td class="td-val icon-warn">△</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">レート制限・IPブロック</td>
+            <td class="td-val icon-ok">✅ Workers で実装可</td>
+            <td class="td-val icon-warn">✅（有料）</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">サイト全体パスワード保護</td>
+            <td class="td-val icon-ok">✅ Workers で実装可</td>
+            <td class="td-val icon-warn">✅（有料）</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">ソースコード非公開</td>
+            <td class="td-val icon-ok">✅ プライベートリポジトリ可</td>
+            <td class="td-val icon-ok">✅ プライベートリポジトリ可</td>
+            <td class="td-val icon-bad">❌ <strong>パブリック必須</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre><span class="c-comment"># _headers ファイルの例（CloudflareとNetlifyで構文共通）</span>
+
+<span class="c-key">/*</span>
+  <span class="c-str">X-Frame-Options: DENY</span>
+  <span class="c-str">X-Content-Type-Options: nosniff</span>
+  <span class="c-str">Referrer-Policy: strict-origin-when-cross-origin</span>
+  <span class="c-str">Permissions-Policy: camera=(), microphone=(), geolocation=()</span>
+  <span class="c-str">Content-Security-Policy: default-src 'self' *.googleapis.com</span>
+
+<span class="c-comment"># GitHub Pages ではこの設定ができない</span></pre>
+  </div>
+
+  <!-- サーバーサイド機能 -->
+  <div class="section">
+    <div class="section-title">⚡ サーバーサイド機能（Functions）</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Workers</th>
+            <th class="th-nl">◈ Netlify Functions</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">サーバーサイド処理</td>
+            <td class="td-val icon-ok">✅ Workers</td>
+            <td class="td-val icon-ok">✅ Functions</td>
+            <td class="td-val icon-bad">❌ <strong>完全不可</strong></td>
+          </tr>
+          <tr>
+            <td class="td-item">無料リクエスト数</td>
+            <td class="td-val val-best"><strong>10万回/日</strong> 🏆</td>
+            <td class="td-val val-ok">12.5万回/月</td>
+            <td class="td-val">—</td>
+          </tr>
+          <tr>
+            <td class="td-item">実行環境</td>
+            <td class="td-val val-best">V8 Isolate（高速）</td>
+            <td class="td-val val-ok">AWS Lambda</td>
+            <td class="td-val">—</td>
+          </tr>
+          <tr>
+            <td class="td-item">コールドスタート</td>
+            <td class="td-val val-best"><strong>なし（〜1ms）</strong> 🏆</td>
+            <td class="td-val val-warn">あり（数百ms）</td>
+            <td class="td-val">—</td>
+          </tr>
+          <tr>
+            <td class="td-item">タイムアウト</td>
+            <td class="td-val">10ms CPU（無料）</td>
+            <td class="td-val val-ok">60秒</td>
+            <td class="td-val">—</td>
+          </tr>
+          <tr>
+            <td class="td-item">対応言語</td>
+            <td class="td-val">JS / TS / Python / Rust / Wasm</td>
+            <td class="td-val">JS / TS / Go</td>
+            <td class="td-val">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-info" style="margin-top:8px;">
+      <strong>Cloudflare Workers の特徴：</strong> 通常の Lambda（コンテナ起動）ではなく <strong>V8 Isolate</strong> を使用するためコールドスタートがなく、Netlify Functions より高速。ただし無料枠のCPU時間制限（10ms）が厳しいため、重い処理は有料プランが必要。
+    </div>
+  </div>
+
+  <!-- ストレージ・DB -->
+  <div class="section">
+    <div class="section-title">🗄️ ストレージ・データベース（無料枠）</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">種別</th>
+            <th class="th-cf">☁ Cloudflare</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">SQL データベース</td>
+            <td class="td-val icon-ok">✅ D1（SQLite互換）<br><span class="text-gray">5GB・読取500万行/日</span></td>
+            <td class="td-val icon-ok">✅ Postgres<br><span class="text-gray">クレジット消費</span></td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">KV ストア</td>
+            <td class="td-val icon-ok">✅ Workers KV<br><span class="text-gray">読取10万/日・1GB</span></td>
+            <td class="td-val icon-bad">❌</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">オブジェクトストレージ</td>
+            <td class="td-val icon-ok">✅ R2（S3互換）<br><span class="text-gray">10GB/月・出口無料</span></td>
+            <td class="td-val icon-ok">✅ Blobs<br><span class="text-gray">クレジット消費</span></td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">ステートフル処理</td>
+            <td class="td-val icon-ok">✅ Durable Objects</td>
+            <td class="td-val icon-bad">❌</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- リダイレクト・ルーティング -->
+  <div class="section">
+    <div class="section-title">🔀 リダイレクト・ヘッダー・ルーティング</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Pages</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">静的リダイレクト</td>
+            <td class="td-val icon-ok">✅ 2,000件</td>
+            <td class="td-val icon-ok">✅ 無制限</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">プロキシ（200リライト）</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">SPA フォールバック</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">設定ファイルの構文互換性</td>
+            <td class="td-val val-best">Netlify と<strong>ほぼ同一</strong></td>
+            <td class="td-val val-ok">独自形式（標準的）</td>
+            <td class="td-val">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-green" style="margin-top:8px;">
+      💡 <strong>Netlify → Cloudflare 移行のメリット：</strong><code>_redirects</code> / <code>_headers</code> ファイルの構文がほぼ同じため、既存の設定をそのまま流用可能。移行コストが最小化できる。
+    </div>
+  </div>
+
+  <!-- 開発体験 -->
+  <div class="section">
+    <div class="section-title">🛠 開発体験・CI/CD</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">項目</th>
+            <th class="th-cf">☁ Cloudflare Pages</th>
+            <th class="th-nl">◈ Netlify</th>
+            <th class="th-gh">◉ GitHub Pages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">GitHub 連携</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+          </tr>
+          <tr>
+            <td class="td-item">PR ごとのプレビューURL</td>
+            <td class="td-val icon-ok">✅ 自動</td>
+            <td class="td-val icon-ok">✅ 自動</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">ロールバック</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-ok">✅</td>
+            <td class="td-val icon-bad">❌</td>
+          </tr>
+          <tr>
+            <td class="td-item">環境変数</td>
+            <td class="td-val icon-ok">✅ 本番/プレビュー分離</td>
+            <td class="td-val icon-ok">✅ コンテキスト別</td>
+            <td class="td-val icon-warn">△ Actions のみ</td>
+          </tr>
+          <tr>
+            <td class="td-item">管理画面の使いやすさ</td>
+            <td class="td-val icon-ok">✅ 良好</td>
+            <td class="td-val val-best">⭐ 最優秀</td>
+            <td class="td-val icon-warn">△ GitHub設定のみ</td>
+          </tr>
+          <tr>
+            <td class="td-item">日本語ドキュメント・情報量</td>
+            <td class="td-val icon-warn">△ やや少ない</td>
+            <td class="td-val icon-ok">✅ 豊富</td>
+            <td class="td-val val-best">⭐ 最多</td>
+          </tr>
+          <tr>
+            <td class="td-item">学習コスト</td>
+            <td class="td-val icon-warn">△ Workers の概念習得が必要</td>
+            <td class="td-val icon-ok">✅ 低い</td>
+            <td class="td-val val-best">⭐ 最低</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 総合スコア -->
+  <div class="section">
+    <div class="section-title">📊 総合評価スコア</div>
+
+    <div class="score-section">
+
+      <div class="score-row">
+        <div class="score-label">コスト（無料枠の実用性）</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:50%"></div></div>
+            <div class="score-num">50</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:80%"></div></div>
+            <div class="score-num">80</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-label">パフォーマンス・CDN</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:75%"></div></div>
+            <div class="score-num">75</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:60%"></div></div>
+            <div class="score-num">60</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-label">セキュリティ機能</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:75%"></div></div>
+            <div class="score-num">75</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:35%"></div></div>
+            <div class="score-num">35</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-label">拡張性（Functions等）</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:80%"></div></div>
+            <div class="score-num">80</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:10%"></div></div>
+            <div class="score-num">10</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-label">開発体験・DX</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:80%"></div></div>
+            <div class="score-num">80</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:65%"></div></div>
+            <div class="score-num">65</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-label">導入・学習の容易さ</div>
+        <div class="score-bars">
+          <div class="score-bar-row">
+            <div class="score-bar-name">Cloudflare</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-cf" style="width:70%"></div></div>
+            <div class="score-num">70</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">Netlify</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-nl" style="width:85%"></div></div>
+            <div class="score-num">85</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-name">GitHub</div>
+            <div class="score-bar-track"><div class="score-bar-fill fill-gh" style="width:100%"></div></div>
+            <div class="score-num">100</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 結論・推奨 -->
+  <div class="section">
+    <div class="section-title">🏆 結論・こんな用途に向いている</div>
+
+    <div class="verdict verdict-cf">
+      <div class="verdict-header">
+        <div class="verdict-crown">🥇</div>
+        <div class="verdict-name">Cloudflare Pages</div>
+        <div class="verdict-tag">総合最強・推奨</div>
+      </div>
+      <div class="verdict-body">
+        無制限帯域幅・世界最高水準のCDN・DDoS防御・Workers によるサーバーサイド処理と、すべての面でバランスが取れている。Netlifyのクレジット問題を根本解決できる移行先として最適。設定ファイルの構文もNetlifyとほぼ同じため移行コストも低い。
+      </div>
+      <ul class="verdict-points">
+        <li>コスト永続ゼロで帯域を気にせず使いたい</li>
+        <li>セキュリティヘッダー・DDoS防御を無料で使いたい</li>
+        <li>将来的にサーバーサイド処理（API・認証等）を追加したい</li>
+        <li>Netlifyから移行したい（設定ファイルをそのまま使える）</li>
+        <li>日本向けサービスで低レイテンシを重視したい</li>
+      </ul>
+      <div class="use-cases">
+        <span class="use-tag use-tag-cf">SPAアプリ</span>
+        <span class="use-tag use-tag-cf">認証付きサービス</span>
+        <span class="use-tag use-tag-cf">本番運用</span>
+        <span class="use-tag use-tag-cf">Netlify移行先</span>
+      </div>
+    </div>
+
+    <div class="verdict verdict-nl">
+      <div class="verdict-header">
+        <div class="verdict-crown">🥈</div>
+        <div class="verdict-name">Netlify</div>
+        <div class="verdict-tag">DX最優秀・有料なら快適</div>
+      </div>
+      <div class="verdict-body">
+        開発体験・ドキュメント・エコシステムの充実度は3サービス中トップ。ただし新規アカウントの無料枠がクレジット制になり、頻繁にデプロイするプロジェクトでは月20回で上限到達という厳しい制約がある。有料プラン（$20/月〜）に移行するか、Cloudflareへ乗り換えを検討したい。
+      </div>
+      <ul class="verdict-points">
+        <li>Deploy Previews で PR ごとの確認を徹底したい</li>
+        <li>日本語情報・コミュニティを活用したい</li>
+        <li>Pro プランを支払っても最高の開発体験が欲しい</li>
+      </ul>
+      <div class="use-cases">
+        <span class="use-tag use-tag-nl">チーム開発</span>
+        <span class="use-tag use-tag-nl">フルスタックアプリ</span>
+        <span class="use-tag use-tag-nl">有料プラン利用</span>
+      </div>
+    </div>
+
+    <div class="verdict verdict-gh">
+      <div class="verdict-header">
+        <div class="verdict-crown">🥉</div>
+        <div class="verdict-name">GitHub Pages</div>
+        <div class="verdict-tag">シンプル・ドキュメント特化</div>
+      </div>
+      <div class="verdict-body">
+        完全無料・設定最小でとにかく公開したいケースに最適。ただし、セキュリティヘッダー設定不可・サーバーサイド処理なし・プレビューデプロイなしという制約は大きく、本格的なWebアプリには向かない。OSSのドキュメントサイト・ポートフォリオのような静的コンテンツが最も適している。
+      </div>
+      <ul class="verdict-points">
+        <li>GitHub にソースコードがあり、すぐ公開したい</li>
+        <li>拡張性より「とにかく無料・簡単」を優先したい</li>
+        <li>セキュリティヘッダー等の制約を許容できる</li>
+      </ul>
+      <div class="use-cases">
+        <span class="use-tag use-tag-gh">ドキュメントサイト</span>
+        <span class="use-tag use-tag-gh">ポートフォリオ</span>
+        <span class="use-tag use-tag-gh">OSSプロジェクトページ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 一行まとめ -->
+  <div class="section">
+    <div class="section-title">📌 一行まとめ</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-item" style="width:32%">こんなとき</th>
+            <th class="th-cf">推奨</th>
+            <th style="background:#475569;color:white;padding:10px 14px;font-size:12px;">理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-item">Netlifyのクレジットが切れた</td>
+            <td class="td-val"><strong style="color:var(--cf-dark)">☁ Cloudflare</strong></td>
+            <td>帯域無制限・ビルド500回/月で問題解決</td>
+          </tr>
+          <tr>
+            <td class="td-item">将来ログイン機能を追加したい</td>
+            <td class="td-val"><strong style="color:var(--cf-dark)">☁ Cloudflare</strong></td>
+            <td>Workers で LINE Custom Auth 等も対応可</td>
+          </tr>
+          <tr>
+            <td class="td-item">チームで PR レビューしながら開発</td>
+            <td class="td-val"><strong style="color:var(--nl-dark)">◈ Netlify</strong></td>
+            <td>Deploy Previews の完成度が最高</td>
+          </tr>
+          <tr>
+            <td class="td-item">OSSや個人ポートフォリオを無料公開</td>
+            <td class="td-val"><strong style="color:var(--gh-dark)">◉ GitHub</strong></td>
+            <td>ゼロ設定・完全無料・GitHub と一体化</td>
+          </tr>
+          <tr>
+            <td class="td-item">日本向けで表示速度を最大化したい</td>
+            <td class="td-val"><strong style="color:var(--cf-dark)">☁ Cloudflare</strong></td>
+            <td>東京・大阪拠点含む300+ CDN拠点</td>
+          </tr>
+          <tr>
+            <td class="td-item">セキュリティヘッダーを細かく制御したい</td>
+            <td class="td-val"><strong style="color:var(--cf-dark)">☁ Cloudflare</strong> / <strong style="color:var(--nl-dark)">◈ Netlify</strong></td>
+            <td>GitHub Pages は設定不可のため</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    Static Hosting Comparison 2026 ｜ 情報は 2026年5月時点のものです。最新情報は各サービスの公式ドキュメントをご確認ください。<br>
+    <a href="https://developers.cloudflare.com/pages/" target="_blank" style="color:var(--cf);">Cloudflare Pages</a> ／
+    <a href="https://docs.netlify.com/" target="_blank" style="color:var(--nl);">Netlify Docs</a> ／
+    <a href="https://docs.github.com/en/pages" target="_blank" style="color:#374151;">GitHub Pages Docs</a>
+  </div>
+
+</div>
+</body>
+</html>
